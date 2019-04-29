@@ -34,7 +34,7 @@ class PassSamples():
         self.all_arts = self._get_all_arts()
         self.rerun_arts = {}
         self.current_WF = self._get_current_WF()
-        self.rerun_steps = rerun_steps ['CG002 - Sort HiSeq X Samples (HiSeq X)', 'CG002 - Sort HiSeq Samples']
+        self.rerun_steps = rerun_steps
         self.rerun_stage = self._get_next_step_stage_URI(self.rerun_steps)
         self.warning_duplicate_samples = []
         self.xml = []
