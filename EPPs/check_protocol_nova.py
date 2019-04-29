@@ -70,8 +70,8 @@ class CheckNovaSettings():
             art.put()
 
 def main(lims, args):
-    process = Process(lims, id = args.pid, standard = args.standard, xp = args.xp)
-    CNS = CheckNovaSettings(process)
+    process = Process(lims, id = args.pid)
+    CNS = CheckNovaSettings(process, standard = args.standard, xp = args.xp)
     CNS.get_artifacts()
     CNS.check_protocol_setings()
     CNS.set_volumes_for_standard()
