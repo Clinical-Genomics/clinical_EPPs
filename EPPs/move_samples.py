@@ -6,35 +6,7 @@ import glsapiutil
 from xml.dom.minidom import parseString
 import sys
 DEBUG = False
-#####################################################################################
-### In this example, the output artifacts could be routed to one or both of these two potential WF/stage combinations
-### Configuration is required --- need to create artifact UDFs which will be the checkboxes we examine
-### For this ex, UDF names "For HiSeq2500" need to checkbox UDFs configured in LIMS under analyte
 
-HiSeq2500 = {   'WF' : 'CG003 SureSelect XT',
-                'Stage' : 'CG002 - Sort HiSeq Samples',
-                'UDF' : "HiSeq2500"
-            }
-
-HiSeqX = {      'WF' : 'CG003 WGS PCR free',
-                'Stage' : 'CG002 - Sort HiSeq X Samples (HiSeq X)',
-                'UDF' : "HiseqX"
-                }
-
-NovaSeq = {      'WF' : 'Dev2 Nova Seq',
-                'Stage' : 'CG001 - Sort Nova Seq Samples',
-                'UDF' : "NovaSeq"
-                }
-
-skip_norm = {   'WF' : 'CG002 Microbial WGS',
-                'Stage' : 'CG002 - Sort HiSeq Samples',
-                'UDF' : "Skip Normalization"
-                }
-
-availableStages = [ HiSeq2500, HiSeqX, skip_norm, NovaSeq]
-# Add more stages by adding to this list.
-
-#####################################################################################
 
 def getStageURI( wfName, stageName ):
 
@@ -60,13 +32,11 @@ def getStageURI( wfName, stageName ):
             break
     return response
 
-def routeAnalytes( stageURIlist, input_art ):
+def routeAnalytes( stageURI, input_art , udf):
 
     ANALYTES = []		### Cache, prevents unnessesary GET calls
 
-    artifacts_to_route = {}
-    for stageURI in stageURIlist:
-        artifacts_to_route[ stageURI ] = []
+    artifacts_to_route = []
 
     ## Step 1: Get the step XML
     processURI = args.stepURI + "/details"
@@ -89,11 +59,9 @@ def routeAnalytes( stageURIlist, input_art ):
                 analyteDOM = parseString( analyteXML )
 
                 ## Step 3: Add the analytes to the list of ones to be routed
-                for stage in range(len(availableStages)):
-                    if api.getUDF( analyteDOM , availableStages[stage]["UDF"] ) == 'true':
-                        artifacts_to_route[ stageURIlist[stage] ].append( analyteURI )
+                if api.getUDF( analyteDOM , udf ) == 'true':
+                    artifacts_to_route.append( analyteURI )
 
-    if DEBUG: print artifacts_to_route
 
     def pack_and_send( stageURI, a_ToGo ):
         ## Step 4: Build and submit the routing message
@@ -110,16 +78,12 @@ def routeAnalytes( stageURIlist, input_art ):
     for stage, artifacts in artifacts_to_route.items():
 
         r = pack_and_send( stage, artifacts )
-
-        if DEBUG: print r
         if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
             msg = str( len(artifacts) ) + " samples were added to the " + stage + " step. "
         else:
             msg = r
         print msg
 
-    #status = "OK"
-    #api.reportScriptStatus( args.stepURI, status, msg )
 
 def setupArguments():
 
@@ -127,6 +91,9 @@ def setupArguments():
     Parser.add_option('-u', "--username", action='store', dest='username')
     Parser.add_option('-p', "--password", action='store', dest='password')
     Parser.add_option('-s', "--stepURI", action='store', dest='stepURI')
+    Parser.add_option("--workflow", action='store', dest='workflow')
+    Parser.add_option("--stage", action='store', dest='stage')
+    Parser.add_option("--udf", action='store', dest='udf')
     Parser.add_option("-i", action='store_true', dest='input',
                         help=("Use this tag if you run the script from a QC step."))
 
@@ -142,15 +109,11 @@ def main():
     api.setURI( args.stepURI )
     api.setup( args.username, args.password )
 
-    stageURIlist = [ getStageURI( stage["WF"], stage["Stage"] ) for stage in availableStages ]
+    stageURI = getStageURI(args.workflow, args.stage)
+    if not stageURI:
+        sys.exit( "Could not retrieve the workflow / stage combination")
 
-    if DEBUG: print stageURIlist
-
-    if "" in stageURIlist:
-        print "Could not retrieve the workflow / stage combination"
-        print stageURIlist
-
-    routeAnalytes( stageURIlist , args.input)
+    routeAnalytes( stageURI , args.input, args.ufd)
 
 if __name__ == "__main__":
     main()

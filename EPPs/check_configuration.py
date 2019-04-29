@@ -69,7 +69,7 @@ class CheckConfigurations():
         or a script argument, eg: CG002 - Aggregate QC (Library Validation).
         """
         if not self.automations:
-            automations = self.lims.get_automations()
+            self.automations = self.lims.get_automations()
         for automation in self.automations:
             bash_string = automation.string
             if bash_string.find(search_by) != -1:
@@ -108,9 +108,10 @@ def main(args):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     CC = CheckConfigurations(lims)
     if args.udf_preset:
-        CC.search_steps_for_udf(args.udf_preset)
+        CC.search_steps_for_udf(search_by=args.udf_preset)
     elif args.automation_string:
-        CC.search_automations(args.automation_string)
+        print(args.automation_string)
+        CC.search_automations(search_by=args.automation_string)
     elif args.print_all_bash:
         CC.print_all_bash()
     elif args.all_active:

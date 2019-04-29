@@ -7,6 +7,7 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import Process
 import sys
 
+
 DESC = """The script is taylored for the Make Pool steps in the NovaSeq WF. Same script
 for both Xp and Standard. It will check we are in the correct step based on the 
 'Flowcell Type' and 'Protocol type' udfs selected in the parrent process.
@@ -18,11 +19,11 @@ Written by Maya Brandi, Science for Life Laboratory, Stockholm, Sweden
 
 class CheckNovaSettings():
 
-    def __init__(self, process):
+    def __init__(self, process, standard, xp):
         self.process = process
         self.artifacts = []
-        self.standard = 'STANDARD Make Pool and Denature (Nova Seq)'
-        self.xp = 'Xp Make Pool (Nova Seq)'
+        self.standard = standard
+        self.xp = xp
         self.parent_process = process.all_inputs()[0].parent_process
         self.flowcell_type = self.parent_process.udf.get('Flowcell Type')
         self.protocol_type = self.parent_process.udf.get('Protocol type')
@@ -69,7 +70,7 @@ class CheckNovaSettings():
             art.put()
 
 def main(lims, args):
-    process = Process(lims, id = args.pid)
+    process = Process(lims, id = args.pid, standard = args.standard, xp = args.xp)
     CNS = CheckNovaSettings(process)
     CNS.get_artifacts()
     CNS.check_protocol_setings()
@@ -81,6 +82,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
     parser.add_argument('--pid',
                         help='Lims id for current Process')
+    parser.add_argument('-s', dest = 'standard',
+                        help='Standard step')
+    parser.add_argument('-x', dest = 'xp',
+                        help='XP step')
     args = parser.parse_args()
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)

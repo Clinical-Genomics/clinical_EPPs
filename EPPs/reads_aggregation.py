@@ -11,15 +11,14 @@ from genologics.epp import EppLogger
 import sys
 import os
 
-
-PROCESS_TYPES =  ["CG002 - Bcl Conversion & Demultiplexing (Illumina SBS)"]
-
 DESC = """
 """
 
+
 class SumReadsRML():
-    def __init__(self, pools):
+    def __init__(self, pools, process_types):
         self.pools = pools
+        self.process_types = process_types
         self.passed_pool_replicates = {}
         self.failed_pools = []
         self.passed_pools = {}
@@ -29,7 +28,7 @@ class SumReadsRML():
         total_reads = 0.0
         for sample in pool.samples:
             nr_lanes = 0
-            arts = lims.get_artifacts(samplelimsid = sample.id, process_type = PROCESS_TYPES)
+            arts = lims.get_artifacts(samplelimsid = sample.id, process_type = self.process_types)
             for art in arts:
                 if art.qc_flag == 'PASSED' and '# Reads' in art.udf:
                     total_reads += float(art.udf.get('# Reads'))
@@ -61,7 +60,7 @@ class SumReads():
     def sum_reads(self, sample):
         """Sum passed sample reads from all lanes and runs. Return total reads in Milions"""
         total_reads = 0.0
-        arts = lims.get_artifacts(samplelimsid = sample.id, process_type = PROCESS_TYPES)
+        arts = lims.get_artifacts(samplelimsid = sample.id, process_type = self.process_types)
         for art in arts:
             if art.qc_flag == 'PASSED' and '# Reads' in art.udf:
                 total_reads += float(art.udf.get('# Reads'))
@@ -98,7 +97,7 @@ class PoolsAndSamples():
 
 def main(lims, args):
     process = Process(lims, id = args.pid)
-    PAS = PoolsAndSamples(process)
+    PAS = PoolsAndSamples(process, process_types)
     PAS.get_pools_and_samples()
     abstract = ''
     if PAS.samples:
@@ -121,6 +120,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
     parser.add_argument('-p', dest = 'pid',
                         help='Lims id for current Process')
+    parser.add_argument('-s', dest = 'process_types',  nargs='+', 
+                        help='Aggregate reads from this process type(s)')
 
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)
