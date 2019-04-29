@@ -75,14 +75,12 @@ def routeAnalytes( stageURI, input_art , udf):
         return response
 
     # Sends seperate routing messages for each stage
-    for stage, artifacts in artifacts_to_route.items():
-
-        r = pack_and_send( stage, artifacts )
-        if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
-            msg = str( len(artifacts) ) + " samples were added to the " + stage + " step. "
-        else:
-            msg = r
-        print msg
+    r = pack_and_send( stageURI, artifacts_to_route )
+    if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
+        msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
+    else:
+        msg = r
+    print msg
 
 
 def setupArguments():
@@ -113,7 +111,7 @@ def main():
     if not stageURI:
         sys.exit( "Could not retrieve the workflow / stage combination")
 
-    routeAnalytes( stageURI , args.input, args.ufd)
+    routeAnalytes( stageURI , args.input, args.udf)
 
 if __name__ == "__main__":
     main()
