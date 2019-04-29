@@ -52,7 +52,8 @@ class SumReadsRML():
 
 
 class SumReads():
-    def __init__(self, samples):
+    def __init__(self, samples, process_types):
+        self.process_types = process_types
         self.samples = samples
         self.failed_samps = 0
         self.passed_samps =0
@@ -97,17 +98,17 @@ class PoolsAndSamples():
 
 def main(lims, args):
     process = Process(lims, id = args.pid)
-    PAS = PoolsAndSamples(process, process_types)
+    PAS = PoolsAndSamples(process)
     PAS.get_pools_and_samples()
     abstract = ''
     if PAS.samples:
         abstract += 'Found Samples - Summing demultiplexed reads on sample level. '
-        SR = SumReads(PAS.samples)
+        SR = SumReads(PAS.samples, args.process_types)
         SR.set_udfs()
         abstract += "Reads aggregated for "+str(SR.passed_samps)+" sample(s). "
     if PAS.pools:
         abstract += 'Found pools - Summing reads from all runs. '
-        SRRML = SumReadsRML(PAS.pools)
+        SRRML = SumReadsRML(PAS.pools, args.process_types)
         SRRML.sum_reads()
         abstract += "Reads summed for: "
         for k, v in SRRML.passed_pools.items():
