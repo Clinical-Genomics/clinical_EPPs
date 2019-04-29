@@ -11,15 +11,14 @@ from genologics.epp import EppLogger
 import sys
 import os
 
-
-PROCESS_TYPES =  ["CG002 - Bcl Conversion & Demultiplexing (Illumina SBS)"]
-
 DESC = """
 """
 
+
 class SumReadsRML():
-    def __init__(self, pools):
+    def __init__(self, pools, process_types):
         self.pools = pools
+        self.process_types = process_types
         self.passed_pool_replicates = {}
         self.failed_pools = []
         self.passed_pools = {}
@@ -29,9 +28,9 @@ class SumReadsRML():
         total_reads = 0.0
         for sample in pool.samples:
             nr_lanes = 0
-            arts = lims.get_artifacts(samplelimsid = sample.id, process_type = PROCESS_TYPES)
+            arts = lims.get_artifacts(samplelimsid = sample.id, process_type = self.process_types)
             for art in arts:
-                if art.qc_flag == 'PASSED' and '# Reads' in art.udf and art.name != 'Script Log Details':
+                if art.qc_flag == 'PASSED' and '# Reads' in art.udf:
                     total_reads += float(art.udf.get('# Reads'))
                     nr_lanes +=1
             if nr_lanes:
@@ -53,7 +52,8 @@ class SumReadsRML():
 
 
 class SumReads():
-    def __init__(self, samples):
+    def __init__(self, samples, process_types):
+        self.process_types = process_types
         self.samples = samples
         self.failed_samps = 0
         self.passed_samps =0
@@ -61,9 +61,9 @@ class SumReads():
     def sum_reads(self, sample):
         """Sum passed sample reads from all lanes and runs. Return total reads in Milions"""
         total_reads = 0.0
-        arts = lims.get_artifacts(samplelimsid = sample.id, process_type = PROCESS_TYPES)
+        arts = lims.get_artifacts(samplelimsid = sample.id, process_type = self.process_types)
         for art in arts:
-            if art.qc_flag == 'PASSED' and '# Reads' in art.udf and art.name != 'Script Log Details':
+            if art.qc_flag == 'PASSED' and '# Reads' in art.udf:
                 total_reads += float(art.udf.get('# Reads'))
         return total_reads/1000000
 
@@ -103,12 +103,12 @@ def main(lims, args):
     abstract = ''
     if PAS.samples:
         abstract += 'Found Samples - Summing demultiplexed reads on sample level. '
-        SR = SumReads(PAS.samples)
+        SR = SumReads(PAS.samples, args.process_types)
         SR.set_udfs()
         abstract += "Reads aggregated for "+str(SR.passed_samps)+" sample(s). "
     if PAS.pools:
         abstract += 'Found pools - Summing reads from all runs. '
-        SRRML = SumReadsRML(PAS.pools)
+        SRRML = SumReadsRML(PAS.pools, args.process_types)
         SRRML.sum_reads()
         abstract += "Reads summed for: "
         for k, v in SRRML.passed_pools.items():
@@ -121,6 +121,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
     parser.add_argument('-p', dest = 'pid',
                         help='Lims id for current Process')
+    parser.add_argument('-s', dest = 'process_types',  nargs='+', 
+                        help='Aggregate reads from this process type(s)')
 
     args = parser.parse_args()
     lims = Lims(BASEURI, USERNAME, PASSWORD)

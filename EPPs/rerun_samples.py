@@ -26,14 +26,15 @@ Written by Maya Brandi, Science for Life Laboratory, Stockholm, Sweden
 """
 
 
+
 class PassSamples():
 
-    def __init__(self, process):
+    def __init__(self, process, rerun_steps):
         self.process = process
         self.all_arts = self._get_all_arts()
         self.rerun_arts = {}
         self.current_WF = self._get_current_WF()
-        self.rerun_steps =  ['CG002 - Sort HiSeq X Samples (HiSeq X)', 'CG002 - Sort HiSeq Samples']
+        self.rerun_steps = rerun_steps
         self.rerun_stage = self._get_next_step_stage_URI(self.rerun_steps)
         self.warning_duplicate_samples = []
         self.xml = []
@@ -122,7 +123,7 @@ class PassSamples():
 
 def main(lims, args):
     process = Process(lims, id = args.pid)
-    PS = PassSamples(process)
+    PS = PassSamples(process, args.rerun_steps)
     PS.get_artifacts()
     PS.check_same_sample_in_many_rerun_pools()
     PS.assign_arts()
@@ -137,8 +138,11 @@ def main(lims, args):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
-    parser.add_argument('--pid',
+    parser.add_argument('-p', dest = 'pid',
                         help='Lims id for current Process')
+    parser.add_argument('-s', dest = 'rerun_steps',  nargs='+', 
+                        help='Steps for rerun.')
+    
     args = parser.parse_args()
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
