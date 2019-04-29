@@ -42,7 +42,7 @@ Written by Maya Brandi, Science for Life Laboratory, Stockholm, Sweden
 
 class PassSamples():
 
-    def __init__(self, process, process_types):
+    def __init__(self, process, process_types, seq_agr_step):
         self.process = process
         self.process_types = process_types
         self.input_arts = self.process.all_inputs(unique=True)
@@ -50,7 +50,7 @@ class PassSamples():
         self.remove_from_WF = []
         self.send_to_next_step = []
         self.all_arts_in_sort = []
-        self.next_step = ['CG002 - Sequence Aggregation']
+        self.next_step = [seq_agr_step]
         self.current_WF = ''
         self.next_step_stage = ''
         self.rXML = []
@@ -149,7 +149,7 @@ class PassSamples():
 
 def main(lims, args):
     process = Process(lims, id = args.pid)
-    PS = PassSamples(process, args.process_types)
+    PS = PassSamples(process, args.process_types, args.seq_agr_step)
     PS.get_samples()
     PS.get_artifacts()
     PS.get_current_WF()
@@ -167,8 +167,11 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
     parser.add_argument('--pid',
                         help='Lims id for current Process')
-    parser.add_argument('-s', dest = 'process_types',  nargs='+', 
+    parser.add_argument('-p', dest = 'process_types',  nargs='+', 
                         help='Get pools from these process type(s)')
+    parser.add_argument('-s', dest = 'seq_agr_step', 
+                        help='Get place samples in this step)')
+                
     args = parser.parse_args()
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
