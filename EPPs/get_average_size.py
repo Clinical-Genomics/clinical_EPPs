@@ -29,8 +29,7 @@ class AverageSizeBP():
         self.average_size = None
 
     def get_artifacts(self):
-        all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
+        self.artifacts = self.process.all_inputs(unique=True)
 
     def make_average_size(self):
         for art in self.artifacts:
@@ -46,7 +45,7 @@ class AverageSizeBP():
     def set_average_size(self):
         if self.average_size:
             for art in self.artifacts:
-                art.udf['Average Size (bp)'] = self.average_size
+                art.udf['Average Size (bp)'] = str(self.average_size)
                 art.put()
 
     

@@ -12,7 +12,7 @@ Science for Life Laboratory, Stockholm, Sweden
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
-from genologics.entities import Process
+from genologics.entities import Process , Artifact
 from genologics.epp import EppLogger
 from genologics.epp import set_field
 import logging
@@ -21,7 +21,8 @@ import sys
 
 
 class SetQC:
-    def __init__(self, process):
+    def __init__(self, process, lims):
+        self.lims = lims
         self.process = process
         self.artifacts = []
         self.wrong_factor1 = []
@@ -42,8 +43,9 @@ class SetQC:
                 sys.exit('No threshold: '+treshold)
 
     def get_artifacts(self):
-        all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
+        ids = [io[1]['limsid'] for io in self.process.input_output_maps if io[1] is not None and io[1]['output-generation-type']=="PerInput"]
+        ids = list(frozenset(ids))
+        self.artifacts = [Artifact(self.lims, id=id) for id in ids if id is not None]
 
     def set_qc(self):
         if self.udfs:
@@ -59,7 +61,7 @@ class SetQC:
                     else:
                         missing_udf = 1
                 if missing_udf:
-                    qc_flag = None
+                    qc_flag = 'UNKNOWN'
                     self.missing_udf += missing_udf
                 if qc_flag=='FAILED':
                     self.qc_fail+=1
@@ -70,7 +72,7 @@ class SetQC:
 
 def main(lims,args):
     process = Process(lims, id = args.pid)
-    C2QC = SetQC(process)
+    C2QC = SetQC(process, lims)
     C2QC.get_artifacts()
     C2QC.get_tresholds(args.tres, args.udfs)
     C2QC.set_qc()
