@@ -125,7 +125,10 @@ class SamplePlacementMap():
                         well_info = container_info[ well_location ]
                         # This only happens if there is an artifact in the well
                         # This assumes that all artifacts have the required UDFs
-                        html.append( '<td class="well" style="background-color: #CCC;">' )
+                        if well_info['artifact'].qc_flag and well_info['artifact'].qc_flag == 'FAILED':
+                            html.append( '<td class="well" style="background-color: #F08080;">' )
+                        else:
+                            html.append( '<td class="well" style="background-color: #CCC;">' )
                         html.append('Project : ' + well_info['sample'].project.name + '<br>')
                         html.append('Sample Name : ' + well_info['sample'].name+ '<br>')
                         html.append('Sample ID : ' + well_info['sample'].id+ '<br>')

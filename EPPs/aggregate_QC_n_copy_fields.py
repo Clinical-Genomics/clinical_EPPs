@@ -77,7 +77,7 @@ class CopyUDF():
             if process_type in self.source_step_types.keys():
                 if process_type not in source_steps.keys():
                     source_steps[process_type] = process
-                elif source_steps[process_type].id < process.id:
+                elif source_steps[process_type].date_run < process.date_run:
                     source_steps[process_type] = process
         return source_steps
 

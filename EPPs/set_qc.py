@@ -8,11 +8,11 @@ Maya Brandi
 
 
 Science for Life Laboratory, Stockholm, Sweden
-""" 
+"""
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
-from genologics.entities import Process
+from genologics.entities import Process, Artifact
 from genologics.epp import EppLogger
 from genologics.epp import set_field
 import logging
@@ -21,8 +21,10 @@ import sys
 
 
 class SetQC:
-    def __init__(self, process):
-        self.process = process
+    def __init__(self, lims, pid):
+        self.lims = lims
+        self.process = Process(lims, id = pid)
+        self.input_output_maps = self.process.input_output_maps
         self.artifacts = []
         self.wrong_factor1 = []
         self.wrong_factor2 = []
@@ -31,6 +33,14 @@ class SetQC:
         self.qc_fail = 0
         self.qc_pass = 0
         self.missing_udf = 0
+
+
+    def get_artifacts(self):
+        for inp, outp in self.input_output_maps:
+            if outp.get("output-generation-type") == "PerAllInputs":
+                continue
+            self.artifacts.append( Artifact(self.lims,id = outp['limsid']))
+
 
     def get_tresholds(self, tresholds, udfs):
         if len(tresholds) != len(udfs):
@@ -41,14 +51,11 @@ class SetQC:
             else:
                 sys.exit('No threshold: '+treshold)
 
-    def get_artifacts(self):
-        all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
 
     def set_qc(self):
         if self.udfs:
             for artifact in self.artifacts:
-                qc_flag = None
+                qc_flag = 'UNKNOWN'
                 missing_udf = 0
                 for udf, treshold in self.udfs.items():
                     if udf in artifact.udf and artifact.udf[udf]:
@@ -59,7 +66,7 @@ class SetQC:
                     else:
                         missing_udf = 1
                 if missing_udf:
-                    qc_flag = None
+                    qc_flag = 'UNKNOWN'
                     self.missing_udf += missing_udf
                 if qc_flag=='FAILED':
                     self.qc_fail+=1
@@ -69,20 +76,19 @@ class SetQC:
                 artifact.put()
 
 def main(lims,args):
-    process = Process(lims, id = args.pid)
-    C2QC = SetQC(process)
+    C2QC = SetQC(lims, args.pid)
     C2QC.get_artifacts()
     C2QC.get_tresholds(args.tres, args.udfs)
     C2QC.set_qc()
-    
+
     abstract = ''
     if C2QC.qc_pass:
-        abstract += str(C2QC.qc_pass) + ' samples passed QC. ' 
+        abstract += str(C2QC.qc_pass) + ' samples passed QC. '
     if C2QC.qc_fail:
         abstract += str(C2QC.qc_fail) + ' samples failed QC. '
     if C2QC.missing_udf:
         abstract += 'Could not set QC-flaggs on '+str(C2QC.missing_udf)+' samples, due to missing udfs.'
-        
+
 
 
     if C2QC.qc_fail or C2QC.missing_udf:
@@ -102,10 +108,11 @@ if __name__ == "__main__":
                         help=('Trhreshold process udfs. (has to be ordered as target udfs)'))
     parser.add_argument('-u', dest = 'udfs', nargs='+',
                         help=('Target udfs. (has to be ordered as threshold udfs)'))
-    
+
     args = parser.parse_args()
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
 
     main(lims, args)
+

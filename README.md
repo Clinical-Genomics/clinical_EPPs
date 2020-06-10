@@ -1,86 +1,179 @@
 # clinical_EPPs 
-Should be updated whenever a new script is added ore removed from the directory and whenever a script is used in a new lims step.
+## About
 
-### Prerequisites
+The External Program Plug-in (EPP) is a script that is configuerd to be run from within a lims step.
 
-
-[SciLifeLab/genologics](https://github.com/SciLifeLab/genologics/tree/master/genologics)
-
-## EPPs
-Scripts to be run from LIMS.
+Clinical Genomics LIMS is using both scripts that are developed and maintained by Genologics, and scripts that are developed by developers at Clinical Genomics. Scripts developed and maintained by Clinical Genomics are collected in this repocitory.
 
 
+## Branching model
 
-Script | Step | Comment
---- | --- | ---
-aliquot_covaris_microbial.py|CG002 - Normalization of microbial samples|
-aliquot_for_lib_pool.py|G002 - Aliquot Samples for Library Pooling|
-aliquot_sequencing_microbial.py|CG002 - Normalization of microbial samples for sequencing|
-amount2qc.py|CG002 - Quantit QC (DNA)|
-art_hist.py|| Helper script, used by other EPPS
-bcl2fastq.py|CG002 - Bcl Conversion & Demultiplexing (Illumina SBS)|
-calculate_amount.py|CG002 - Qubit QC (DNA)|
-||CG002 - Qubit QC (Library Validation)|
-calc_vol.py|CG002 - Aliquot Samples for Covaris|
-copy_field_samp2art.py|CG002 - Aliquot Samples for Library Pooling|
-copy_orig_well_art2samp.py|CG002 - Reception Control|
-copy_process_UDF_to_arts.py|CG002 - Library Normalization (HiSeq X)|
-copy_UDFs_between_WFs.py|CG002 - Plate Setup MAF|
-copyUDFs_from_aggregateQC_or_other.py|CG002 - Aliquot Samples for Library Pooling|
-copyUDFs_from_aggregateQC.py|G002 - Aliquot Samples for Library Pooling|
-||CG002 - Library Normalization (HiSeq X)|
-demultiplexdata2qc.py|CG002 - Bcl Conversion & Demultiplexing (Illumina SBS)|
-file2udf_quantit_qc.py|CG002 - Quantit QC (DNA)|
-||CG002 - Quantit QC (normalization)|
-||CG002 - Quantit QC (Library Validation)|
-get_average_size.py|CG002 - Tapestation Microbial QC|
-get_EB_vol.py| CG002 - Aliquot Libraries for Hybridization (SS XT)|
-get_missing_reads.py|CG002 - Sequence Aggregation|
-help_get_stuff.py||silly development helper
-LibNorm_calc_vol.py|CG002 - Library Normalization (HiSeq X)|
-MAF_calc_vol.py|CG002 - Plate Setup MAF|
-make_bravo_csv.py|CG002 - Normalization of microbial samples|
-||CG002 - Normalization of microbial samples for sequencing|
-make_MAF_sample_table.py|CG002 - Plate Setup MAF|
-make_placement_map.py|CG002 - Aliquot Samples for Covaris|
-||CG002 - Plate Setup MAF|
-||CG002 - Library Normalization (HiSeq X)|
-||G002 - Aliquot Samples for Library Pooling|
-molar_concentration.py|CG002 - Aggregate QC (Library Validation)|
-||CG002 - Qubit QC RML|
-move_samples.py|CG002 - Aggregate QC (Library Validation)|
-||CG002 - Sort HiSeq Samples|
-||CG002 - Sort HiSeq X Samples (HiSeq X)|
-qc2udf_art2samp.py| CG002 - Aggregate QC (DNA)|
-||CG002 - Sequence Aggregation|
-||CG002 - Sequence Aggregation|
-||CG002 - Aggregate QC (Library Validation)|
-qPCR_dilution.py|CG002 - qPCR QC (Library Validation)|
-reads_aggregation.py|CG002 - Sequence Aggregation|
-reads_aggregation_rml.py|CG002 - Sequence Aggregation|
-prepare_new_samples.py|CG002 - Reception Control|
-rerun.py|CG002 - Sequence Aggregation|
-set_qc.py|CG002 - Qubit QC (DNA)|
-||CG002 - Qubit QC (Library Validation)|
+clinical_EPPs is using github flow branching model as described in our development manual.
 
 
-#### Scripts no longer in use
+## Production and Stage
 
+Development of new EPPs is preferably done locally but the final testing is done on the stage server.
 
-```python
-reception_control.py
-concentration2qc.py
-aliquot_for_lib_pool_2_5_nM.py  
-copy_field_art2samp.py
-copy_well_art2samp.py
-glsapiutil.py
-invoice.py
-make_bravo_csv_test.py
-make_bravo_normalization_file.py
-make_MAF_plate_layout.py
-microbial_copyUDFs_from_aggregateQC.py
-qPCR_dilution_old.py
-reagent-label.py
-aliquot_for_lib_pool_no_set_conc.py
-set_udf_from_excel.py
+The production lims system is set up on hippocampus and the stage lims system is set up on amygdala.
+
+ssh into the servers:
+
+`ssh gls@clinical-lims-stage.scilifelab.se`
+
+`ssh gls@clinical-lims.scilifelab.se`
+
+You will need a password wich is kept in the safety locker at clinical genomics.
+
+## Insalling
+The procedure for installing is the same on both servers.
+
+clinical_EPPs is cloned into `/home/glsai/opt/` and installed by the glsai user under the conda environment epp_master.
+
 ```
+sudo -iu glsai
+source activate epp_master
+
+cd /home/glsai/opt/clinical_EPPs
+git pull <branch name>
+python setup.py install
+
+```
+the branch that has been installed is now avalibe from within the [lims web interface](https://clinical-lims-stage.scilifelab.se/clarity/).
+
+
+
+## Setting up a new EPP
+
+The branch with the new script has been installed and you want to test the script through the web interface. (Or deploy it to production. The procedure is the same.)
+
+Let us call the new script we want to test: `bcl2fastq.py`. Running it from the command line looks like this:
+
+```
+(epp_master)glsai@clinical-lims-stage:~/opt/clinical_EPPs/EPPs$ python bcl2fastq.py --help
+
+usage: bcl2fastq.py [-h] [-p PID] [-l LOG]
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -p PID      Lims id for current Process
+  -l LOG      File name for standard log file, for runtime information and
+              problems.
+```
+
+When the script is configured in the lims step, arguments bust be replaced by `tokens`. They function as placeholders that are replaced with actual values at runtime. You can read more about tokens [here](https://genologics.zendesk.com/hc/en-us/articles/213988783-Derived-Sample-Naming-Convention-Tokens).
+
+To make the new script avalible in the [web interface](https://clinical-lims-stage.scilifelab.se/clarity), go to the `CONFIGURATON` tab and then select `AUTOMATION`. Klick the `NEW AUTOMATON` button.
+
+- Choose a Automation Name
+- Channel Name should always be `limsserver`.
+- Enter the command line string. If you need help selecting a token for an argument, klick the `TOKENS` tab wich will show the list of avalible tokens. In this case the string is
+`bash -c "/home/glsai/miniconda2/envs/epp_master/bin/bcl2fastq.py -p {processLuid} -l {compoundOutputFileLuid0}"`
+- Under `AUTOMATION USE`, select master step(s) in which the new EPP should be available.
+- Save
+
+
+![](img/Automation_details.png)
+
+
+Once the EPP is in place on the master step you need to configure its usage. This can be done both on master step and on step level. 
+
+Klick the `LAB WORK` tab and select a step in which you have enabeled the EPP. 
+
+
+![](img/configuration_labwork.png)
+
+
+
+Choose `STEP` or `MASTER STEP`, and scroll down to the `AUTOMATION` section. The new EPP should be seen there. 
+
+
+![](img/step_settings.png)
+
+
+Select Trigger Location - at what point in the step the script should be run, and Trigger Style - how the script should be triggered.
+
+The script is now avalible from within the step. Queue some samples to the step to try it!
+
+![](img/record_details_view.png)
+
+Read more about EPPs in the [Clarity LIMS API Cookbook](https://genologics.zendesk.com/hc/en-us/restricted?return_to=https%3A%2F%2Fgenologics.zendesk.com%2Fhc%2Fen-us%2Fcategories%2F201688743-Clarity-LIMS-API-Cookbook)
+
+
+## Config files
+
+**~/.genologicsrc**
+   
+This config file contains user info to give access to the lims database and is requiered for the SciLifeLab/genologics package. All EPPs depend on this config.
+
+Its content must look like this:
+
+```
+[genologics]
+BASEURI=
+USERNAME=
+PASSWORD=
+```
+
+**~/.clinical_eppsrc**
+
+This config file contains userinfo to give access to cgstats which contains information about demultiplexing data. The config is used by one of the scripts in the Clinical-Genomics/clinical_EPPs package; bcl2fastq.py
+
+Its content must look like this:
+
+```
+[demultiplex data]
+
+SQLALCHEMY_DATABASE_URI=mysql+pymysql://remoteuser:<password>@127.0.0.1:<port>/cgstats
+[CgFace]
+URL=https://clinical-api.scilifelab.se/api/v1
+
+```
+
+## Trouble shooting
+
+When a script is failing, usually as a developer, you will get this information from the lims user who has run the script from within a specific lims step. It´s easiest to trouble shoot if the step is still opened.
+
+![](img/debug_step.png)
+
+**Trouble shooting - step by step:**
+* Ask the user to keep the step opened for you to trouble shoot, if possible. (Sometimes they need to continue the step)
+* Go to the step to see what EPP was failing. The name of the EPP is the label on blue button. In this case: **1. Copy UDFs from AggregateQC - Twist**
+* Go to configuration/automation in the web interface and search for the button name. There might be many buttons with the same name. Find the button that is active in the masterstep tht you are debugging. 
+* The issue can be in how the script has been configured (the "command line" text box), it can be some bug in the script, or it can be that the script is expecting the artifacts/process/samples/containers or whatever has some fields or features that are not in place. 
+* One way to debug is to run the script from command line. ssh into productuoin as described above and run the script with the same argument that are given in the "command line" text box. The process id {processLuid} is allmost allways asked for. 
+
+![](img/debug_automation.png)
+
+
+`{processLuid} = <prefix>-<the last section of the url of the step>` 
+
+In this case: 24-144356. 
+  
+Prefixes:
+
+24- for configured processes
+
+122- for pooling processes
+
+151- for indexing/reagent tag processes
+
+```
+cd /home/glsai/opt/clinical_EPPs/EPPs/
+python copyUDFs_from_aggregateQC.py -p '24-144356' -l testlog -u 'Concentration' 'Amount (ng)' -q 'Aggregate QC (DNA) TWIST v1'
+```
+
+
+### Scripts developt by Illumina
+In our Clinical Genomics lims system we are also using a fiew scripts that are developed and maintained by Illumina.
+Programs written and maintained by Illumina are located in
+
+Java scripts:
+`/opt/gls/clarity/extensions/ngs-common/`
+
+Python scripts:
+`/opt/gls/clarity/customextensions`
+
+Don't thouch these directories. Insted, if a script developed by Illumina is failing, contact them for help support. 
+
+

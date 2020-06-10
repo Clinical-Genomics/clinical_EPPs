@@ -22,31 +22,42 @@ class CalculateDilution():
         self.out_analytes = [a for a in process.all_outputs() if a.type=='Analyte']
         self.passed_arts = []
         self.failed_arts = []
-        self.final_vol = 25 
-        self.final_vol_if_litle_sample = 50
+        self.min_final_vol = 15
         self.final_conc = 4 
 
     def apply_calculations(self):
         for art in self.out_analytes:
-            udfs_ok = True
-            try:
-                int(art.udf['Concentration'])
-            except Exception as e:
-                logging.exception(e) 
-                udfs_ok = False
-            if udfs_ok:
-                sample_vol = self.final_conc*self.final_vol/art.udf['Concentration']
-                art.udf['Final Volume (uL)'] = self.final_vol
-                if sample_vol < 0.5:
-                    sample_vol = self.final_conc*self.final_vol_if_litle_sample/art.udf['Concentration']
-                    art.udf['Final Volume (uL)'] = self.final_vol_if_litle_sample
-                art.udf['Volume H2O (ul)'] =  art.udf['Final Volume (uL)'] - sample_vol
-                art.udf['Volume of sample (ul)'] = sample_vol 
+            sample_conc = art.udf.get('Concentration')
+            qc_flag='FAILED'
+            if sample_conc is None or sample_conc<4:
+                logging.exception('Too low or Missing concentration') 
+                self.failed_arts.append(art)
+                continue
+            elif sample_conc<20:
+                sample_vol= self.min_final_vol*self.final_conc/art.udf['Concentration']
+            elif 20<=sample_conc<244:
+                sample_vol=3
+                qc_flag='PASSED'
+            elif 244<=sample_conc<364:
+                sample_vol=2
+            elif 364<=sample_conc<724:
+                sample_vol=1
+            elif 724<=sample_conc<1444:
+                sample_vol=0.5
+            else:
+                self.failed_arts.append(art)
+                continue
+            final_vol=sample_vol*art.udf['Concentration']/self.final_conc
+            if final_vol<self.min_final_vol:
+                self.failed_arts.append(art)
+                continue
+            else:
+                art.qc_flag=qc_flag
+                art.udf['Final Volume (uL)'] = final_vol
+                art.udf['Volume H2O (ul)'] =  final_vol - sample_vol
+                art.udf['Volume of sample (ul)'] = sample_vol
                 art.put()
                 self.passed_arts.append(art)
-            else:
-                self.failed_arts.append(art)            
-
 
 
 def main(lims, args):

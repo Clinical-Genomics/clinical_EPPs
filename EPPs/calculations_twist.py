@@ -18,6 +18,7 @@ class CalculationsTwist:
         self.process = process
         self.iom = process.input_output_maps
         self.artifacts = []
+        self.amount_fail = False
         self.okej = 0
         self.failed = 0
         self.missing_udfs = []
@@ -67,6 +68,12 @@ class CalculationsTwist:
                 fract_of_pool = reads/float(total_reads)
                 amount = pool_size * fract_of_pool
                 vol = amount/concentration
+                if vol>15:
+                    vol=15
+                if amount<187.5:
+                    pool.qc_flag='FAILED'
+                    self.amount_fail = True
+                art.udf['Amount taken (ng)'] = amount
                 art.udf['Volume of sample (ul)'] = vol
                 art.put()            
                 total_volume += vol
@@ -79,7 +86,7 @@ class CalculationsTwist:
         for pool in self.artifacts:
             if pool.udf.get('Total Volume (ul)'):
                 pool.udf['Volume H2O (ul)'] = max(all_volumes) - pool.udf.get('Total Volume (ul)')
-                pool.put()
+            pool.put()
             
 
     def calcualate_amount_for_libval(self):
@@ -113,13 +120,15 @@ def main(lims,args):
         sys.exit('Non valid argument given. -c can take pooling/libval/aliquot')
     
     abstract = ''
+    if AT.amount_fail:
+        abstract += 'Input amount low for samples in pool. Generate placement map for more info. '
     if AT.failed:
         missing = ', '.join( list(set(AT.missing_udfs)))
         abstract += 'Failed to perform calculations for '+ str(AT.failed)+ ' samples. Some of the following udfs are invalid or missing: ' +   missing + '. '
     if AT.okej:
         abstract += 'Performed calculations for '+ str(AT.okej)+ ' samples.'
 
-    if AT.failed:
+    if AT.failed or AT.amount_fail:
         sys.exit(abstract)
     else:
         print >> sys.stderr, abstract

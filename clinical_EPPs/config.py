@@ -7,5 +7,4 @@ config = ConfigParser.SafeConfigParser()
 config.readfp(open(clinical_eppsrc))
 
 SQLALCHEMY_DATABASE_URI = config.get('demultiplex data', 'SQLALCHEMY_DATABASE_URI').rstrip()
-
-
+CG_URL = config.get('CgFace', 'URL').rstrip()

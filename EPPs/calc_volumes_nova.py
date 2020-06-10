@@ -29,8 +29,8 @@ class NovaSeqSampleVolumes():
         self.total_reads = None
         self.artifacts = []
         self.missing_samp_udf = False
-        self.run_mode_dict =  {'NovaSeq Standard' : {'S1': 100, 'S2': 150,'S4': 310},
-                                'NovaSeq Xp'      : {'S1': 18 , 'S2': 22 ,'S4': 30}}
+        self.run_mode_dict =  {'NovaSeq Standard' : {'S1': 100, 'S2': 150, 'S4': 310, 'SP': 100},
+                                'NovaSeq Xp'      : {'S1': 18 , 'S2': 22 , 'S4': 30, 'SP': 18}}
 
     def get_artifacts(self):
         """Get outpout artifacts and count nr samples"""

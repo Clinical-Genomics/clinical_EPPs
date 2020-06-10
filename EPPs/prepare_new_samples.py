@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.entities import Process
+from genologics.entities import Process, Artifact
 
 from clinical_EPPs.config import CG_URL
 from cgface.api import CgFace
@@ -15,29 +15,40 @@ into any workflow. The Reads Missing (M) is at this point defined only by the
 Sequencing Analysis. Numers are fetched from cgface"""
 
 class SetMissingReads():
-    def __init__(self, process):
-        self.process = process
+    def __init__(self, lims, pid):
+        self.lims = lims
+        self.process = Process(lims, id = pid)
+        self.input_output_maps = self.process.input_output_maps
         self.samples = []
         self.failed_samples = 0
         self.cgface_obj = CgFace(url=CG_URL)
 
+
     def get_samples(self):
-        artifacts = self.process.all_outputs(unique=True)
-        for a in artifacts:
-            if len(a.samples)==1:
-                self.samples.append((a.samples[0], a))
+
+        for inp, outp in self.input_output_maps:
+            inart =  Artifact(self.lims,id = inp['limsid'])
+            outart =  Artifact(self.lims,id = outp['limsid']) if outp else None
+            sample = inart.samples[0]
+            self.samples.append((sample, outart))
+
 
     def set_reads_missing(self, sample, art):
-        """Sets the 'Reads missing (M)' udf, based on the application tag"""
+        """Sets the 'Reads missing (M)' udf, based on the application tag. 
+        If out-arts exist, set the qc-flaggs on the out-arts"""
+
         try:
             app_tag = sample.udf['Sequencing Analysis']
             target_amount = self.cgface_obj.apptag(tag_name = app_tag, key = 'target_reads')
             sample.udf['Reads missing (M)'] = target_amount/1000000
-            art.qc_flag = "PASSED"
+            if art:
+                art.qc_flag = "PASSED"
+                art.put()
         except:
             self.failed_samples += 1
-            art.qc_flag = "FAILED"
-        art.put()
+            if art:
+                art.qc_flag = "FAILED"
+                art.put()
         sample.put()
 
     def check_samples(self):
@@ -45,8 +56,7 @@ class SetMissingReads():
             self.set_reads_missing(samp, art)
 
 def main(lims, pid):
-    process = Process(lims, id = pid)
-    SMR = SetMissingReads(process)
+    SMR = SetMissingReads(lims, pid)
     SMR.get_samples()
     SMR.check_samples()
 

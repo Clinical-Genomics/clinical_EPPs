@@ -3,7 +3,7 @@ DESC="""EPP script to set qc-flaggs based on given conditions
 
 Maya Brandi
 Science for Life Laboratory, Stockholm, Sweden
-""" 
+"""
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
@@ -28,9 +28,12 @@ class SetQC:
         for condition_string in condition_strings:
             udf, criteria, treshold = condition_string.split(',')
             self.conditions.append({'udf': udf, 'criteria': criteria, 'treshold': treshold})
-            
-    def get_artifacts(self):
-        artifact_ids = [io[1]['limsid'] for io in self.iom if io[1]['output-generation-type'] == 'PerInput']
+
+    def get_artifacts(self, output_type_analyte):
+        if output_type_analyte:
+            artifact_ids = [io[1]['limsid'] for io in self.iom if io[1]['output-type'] == 'Analyte']
+        else:
+            artifact_ids = [io[1]['limsid'] for io in self.iom if io[1]['output-generation-type'] == 'PerInput']
         self.artifacts = [Artifact(self.lims, id=id) for id in artifact_ids if id is not None]
 
     def set_qc(self):
@@ -80,25 +83,25 @@ class SetQC:
                 self.qc_fail+=1
             elif qc_flag=='PASSED':
                 self.qc_pass+=1
-        
+
             art.qc_flag = qc_flag
             art.put()
 
 def main(lims,args):
     process = Process(lims, id = args.pid)
     C2QC = SetQC(process, lims)
-    C2QC.get_artifacts()
+    C2QC.get_artifacts(args.output_type_analyte)
     C2QC.get_tresholds(args.conditions)
     C2QC.set_qc()
-    
+
     abstract = ''
     if C2QC.qc_pass:
-        abstract += str(C2QC.qc_pass) + ' samples passed QC. ' 
+        abstract += str(C2QC.qc_pass) + ' samples passed QC. '
     if C2QC.qc_fail:
         abstract += str(C2QC.qc_fail) + ' samples failed QC. '
     if C2QC.missing_udf:
         abstract += 'Udfs missing for some samples.'
-        
+
     if C2QC.qc_fail or C2QC.missing_udf:
         sys.exit(abstract)
     else:
@@ -112,10 +115,13 @@ if __name__ == "__main__":
                         help='Lims id for current Process')
     parser.add_argument('-c', dest = 'conditions', nargs='+',
                         help=('Strings with three elements comma separated describing a FAILING conditions: "<art udf1>,<criteria1>,<treshold1>" "<art udf2>,<criteria2>,<treshold2>" "<art udf3>,<criteria3>,<treshold3>" etc. Accepted failing conditions are: <, <=, >, >=, ==, !='))
-    
+    parser.add_argument('-ota', dest = 'output_type_analyte', action='store_true', default=False,
+                        help='Select output artifacts based on output-type="Analyte". Defaule is False. Artifacts are then selected based on output-generation-type="PerAllInputs"')
+
     args = parser.parse_args()
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     lims.check_version()
 
     main(lims, args)
+

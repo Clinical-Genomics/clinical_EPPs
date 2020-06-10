@@ -20,8 +20,9 @@ Written by Maya Brandi, Science for Life Laboratory, Stockholm, Sweden
 
 class File2UDF():
 
-    def __init__(self, lims, pid):
+    def __init__(self, lims, pid, inp_is_source):
         self.lims = lims
+        self.source_is_input_artifact = inp_is_source
         self.process = Process(lims, id = pid)
         self.input_output_maps = self.process.input_output_maps
         self.artifacts = {}
@@ -39,7 +40,8 @@ class File2UDF():
                 continue
             in_art = Artifact(self.lims,id = inp['limsid'])
             out_art = Artifact(self.lims,id = outp['limsid'])
-            col,row = in_art.location[1].split(':')
+            source_art = in_art if self.source_is_input_artifact == True else out_art
+            col,row = source_art.location[1].split(':')
             well = col + row
             self.artifacts[well] = out_art
             self.all_arts += 1
@@ -61,7 +63,7 @@ class File2UDF():
         """Reads the csv and sets the average size bp for each sample"""
 
         with open(self.result_file) as f:
-            d = DictReader(f, delimiter=';')
+            d = DictReader(f, delimiter=',')
             l = list(d)
         for sample in l:
             well = sample.get('WellId')
@@ -77,11 +79,11 @@ class File2UDF():
 
 
 def main(lims, args):
-    F2UDF = File2UDF(lims, args.pid)
+    F2UDF = File2UDF(lims, args.pid, args.inp_is_source)
     F2UDF.get_result_file(args.result_file)
     F2UDF.get_artifacts()
     F2UDF.set_udfs()
-    
+
 
     abstract = "Updated %s out of %s artifact(s)." % (str(F2UDF.passed_arts), str(F2UDF.all_arts))
     if F2UDF.failed_arts:
@@ -100,6 +102,8 @@ if __name__ == "__main__":
                        help='Lims id for current Process')
     parser.add_argument('-f', dest='result_file', default=None,
                        help=(''))
+    parser.add_argument('-i', dest='inp_is_source', default=True,
+                       help=('source well from input or output?'))
 
 
     args = parser.parse_args()

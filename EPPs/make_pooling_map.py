@@ -62,6 +62,7 @@ class SamplePlacementMap():
             html.append( """<tr>
                     <th style="width: 7%;" class="">Sample Lims ID</th>
                     <th style="width: 7%;" class="">Source Well</th>
+                    <th style="width: 7%;" class="">Amount of Sample</th>
                     <th style="width: 7%;" class="">Volume of Sample</th>
                     <th style="width: 7%;" class="">Pool Name</th>
                     <th style="width: 7%;" class="">Source Container</th></tr></thead>""")
@@ -70,10 +71,15 @@ class SamplePlacementMap():
             ## artifact list
             for art in artifacts:
                 sample = art.samples[0]
-                html.append( '<tr><td style="width: 7%;">' )
+                if art.udf.get('Amount taken (ng)') and art.udf.get('Amount taken (ng)') < 187.5 :
+                    html.append( '<tr><td style="background-color: #F08080; width: 7%;">' )
+                else:
+                    html.append( '<tr><td style="width: 7%;">' )
                 html.append( sample.id )
                 html.append( '</td><td class="" style="width: 7%;">' )
                 html.append(  art.location[1])
+                html.append( '</td><td class="" style="width: 7%;">' )
+                html.append( str(round(art.udf.get('Amount taken (ng)'),2)))
                 html.append( '</td><td class="" style="width: 7%;">' )
                 html.append( str(round(art.udf.get('Volume of sample (ul)'),2)))
                 html.append( '</td><td class="" style="width: 7%;">' )

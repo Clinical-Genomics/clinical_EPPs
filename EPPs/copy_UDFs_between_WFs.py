@@ -92,7 +92,7 @@ if __name__ == "__main__":
                               'for runtime information and problems.'))
     parser.add_argument('-u', dest = 'udfs', nargs='+',
                         help=('list of UDFs to copy'))
-    parser.add_argument('-q', dest = 'qcstep',
+    parser.add_argument('-q', dest = 'qcstep', nargs='+',
                         help=('Name of qc-step from wich we want to copy. '
                               'Eg: "CG002 - Aggregate QC (DNA)"'))
     parser.add_argument('-d', dest = 'target_out', action='store_true',

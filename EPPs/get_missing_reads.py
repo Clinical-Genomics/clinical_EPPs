@@ -39,6 +39,7 @@ class MissingReads():
             try:
                 reads_total = samples[0].udf['Total Reads (M)']
                 app_tag = samples[0].udf['Sequencing Analysis']
+                data_analysis = samples[0].udf.get('Data Analysis')
             except:
                 udfs_ok = False
             if udfs_ok:
@@ -46,13 +47,19 @@ class MissingReads():
                     target_amount_reads = self.cgface_obj.apptag(tag_name = app_tag, key = 'target_reads')
                 except:
                     sys.exit("Could not find application tag: "+app_tag+' in database.')
+                # Converting from reads to milion reads, as all ather vareables are in milions.
+                target_amount = target_amount_reads/1000000                  
                 if app_tag[0:3]=='WGS' or app_tag[0:3]=='WGT':
-                    target_amount = 650
-                    reads_missing = target_amount - reads_total
+                    if data_analysis=='MIP':
+                        # minimum reads is 92% of target reads for MIP samples
+                        reads_min = 0.92*target_amount
+                    else:
+                        # minimum reads is 100% of target reads for other WGS and WGT samples
+                        reads_min = target_amount
                 else:
-                    target_amount = target_amount_reads/1000000
+                    # minimum reads is 75% of target reads for all other samples
                     reads_min = 0.75*target_amount
-                    reads_missing = reads_min - reads_total
+                reads_missing = reads_min - reads_total
                 if reads_missing > 0:
                     for sample in samples:
                         sample.udf['Reads missing (M)'] = target_amount - reads_total
