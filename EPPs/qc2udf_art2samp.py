@@ -64,7 +64,7 @@ def main(lims, args):
         sys.exit(abstract)
     else:
         abstract = ("The '{du}' UDF, was successfully set on {pa} samples.").format(**d)
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":
