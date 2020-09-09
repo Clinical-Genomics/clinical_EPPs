@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 import json
 from statistics import mean, median
 import numpy
-from clinical_EPPs import WELL_TRANSFORMER
+from clinical_EPPs.constants.well_transformer import WELL_TRANSFORMER
 import pandas as pd
 from pandas import ExcelWriter
 from pandas import ExcelFile

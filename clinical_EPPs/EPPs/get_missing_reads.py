@@ -7,7 +7,7 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 
 from genologics.entities import Process
 from genologics.epp import EppLogger
-from clinical_EPPs.config import CG_URL
+from clinical_EPPs.configs.config import CG_URL
 from cgface.api import CgFace
 import logging
 import sys
