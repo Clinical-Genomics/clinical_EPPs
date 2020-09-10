@@ -208,7 +208,7 @@ class glsapiutil2:
         try:
             self.PUT( newXML, newuri )
         except:
-            print message
+            print(message)
 
     def getArtifacts( self, LUIDs ):
 
@@ -525,7 +525,7 @@ class glsapiutil:
         try:
             self.updateObject( newXML, newuri )
         except:
-            print message
+            print(message)
 
     @staticmethod
     def removeState( xml ):

@@ -131,7 +131,7 @@ def main(lims,args):
     if AT.failed or AT.amount_fail:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

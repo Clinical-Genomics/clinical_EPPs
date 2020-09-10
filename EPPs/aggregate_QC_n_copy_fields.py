@@ -92,7 +92,7 @@ def main(lims, args):
         failed = ' ,'.join(list(set(CUDF.failed_udfs)))
         sys.exit('failed to copy some udfs for sample(s): '+ failed)
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

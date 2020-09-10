@@ -33,7 +33,6 @@ def main(lims, args):
     process = Process(lims, id = args.p)
     MRP = MissingReadsPool(process)
     MRP.apply_calculations()
-    print >> sys.stderr
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

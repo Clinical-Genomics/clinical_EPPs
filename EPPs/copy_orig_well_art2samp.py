@@ -53,7 +53,7 @@ def main(lims, args):
     if CUDFS.failed_arts:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

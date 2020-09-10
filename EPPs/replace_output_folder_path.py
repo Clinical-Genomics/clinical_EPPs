@@ -40,7 +40,7 @@ def main(lims, args):
     if RP.fail:
         sys.exit(RP.fail)
     else:
-        print >> sys.stderr, 'Replaced path'
+        print('Replaced path', file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ def main(lims, args):
         abstract += str(len(PS.rerun_arts)) + ' artifacts were sent for rerun: '+', '.join(PS.rerun_arts.keys())+'.'
     if PS.warning_duplicate_samples:
         abstract += 'WARNING: some samples were sent for rerun as part of more than one pool'
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

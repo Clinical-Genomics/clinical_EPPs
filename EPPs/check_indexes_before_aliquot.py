@@ -77,7 +77,7 @@ def main(lims, args):
         CI.make_log(args.log)
         sys.exit('Warning: Duplicated indexes. See log file!')
     else:
-        print >> sys.stderr, 'No duplicate indexes'
+        print('No duplicate indexes', file=sys.stderr)
 
 
 if __name__ == "__main__":

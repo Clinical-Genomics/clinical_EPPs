@@ -121,7 +121,8 @@ def main(lims,args):
     elif len(A2QC.wrong_factor1)+ len(A2QC.wrong_factor2):
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

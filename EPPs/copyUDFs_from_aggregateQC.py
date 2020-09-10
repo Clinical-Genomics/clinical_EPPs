@@ -65,7 +65,7 @@ def main(lims, args):
     if CUDF.failded_udfs:
         sys.exit('failed to copy some udfs')
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 
 

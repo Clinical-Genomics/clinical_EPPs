@@ -220,7 +220,7 @@ def main(lims, args):
     if BCL.failed_arts or BCL.not_updated_arts:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

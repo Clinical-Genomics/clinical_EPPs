@@ -105,7 +105,7 @@ def main(lims, args):
     PS.rout()
 
     abstract = 'Passed '+str(PS.nr_samps)+' samples and '+str(PS.nr_pools) +' pools to the NovaSeq Protocol.'
-    print >> sys.stdout,abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

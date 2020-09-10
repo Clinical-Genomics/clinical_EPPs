@@ -63,8 +63,7 @@ def main(lims, args):
          'ia': len(EBV.failed_arts)}
     abstract = ("Updated {ca} artifact(s), skipped {ia} artifact(s) with "
                 "wrong and/or blank values for some udfs.").format(**d)
-
-    print >> sys.stderr, abstract 
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

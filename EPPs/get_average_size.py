@@ -56,8 +56,8 @@ def main(lims, args):
     ASBP.get_artifacts()
     ASBP.make_average_size()
     ASBP.set_average_size()
-    print >> sys.stderr, "'Average Size (bp)' has ben set."
-
+    print("'Average Size (bp)' has ben set.", file=sys.stderr)
+    
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

@@ -86,7 +86,7 @@ def main(lims,args):
         abstract = abstract + " Samples: " + ', '.join(list(set(BV.volume_warning))) + ", got red QC-flags due to high or low volumes."
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def main(lims, args):
         sys.exit(abstract)
     else:
         abstract = "Bravo CSV sucsessfully generated."
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

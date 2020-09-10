@@ -161,7 +161,7 @@ def main(lims, args):
     abstract = 'Passed '+str(len(PS.send_to_next_step))+' arts to next step.'
     if PS.remove_from_WF:
         abstract += ' Removed ' + str(len(PS.remove_from_WF))+ ' artifacts from the wf.'
-    print >> sys.stdout,abstract ## How do "flush this message in a correct way?"
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

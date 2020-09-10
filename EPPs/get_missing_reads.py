@@ -91,7 +91,7 @@ def main(lims, args):
     abstract = ("Updated {ca} sample(s), skipped {ia} sample(s) with "
                 "wrong and/or blank values for some udfs.").format(**d)
 
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

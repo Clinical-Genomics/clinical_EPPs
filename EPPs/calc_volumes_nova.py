@@ -128,7 +128,7 @@ def main(lims, args):
         unique_warnings = list(set(NSSV.warning))
         sys.exit(' '.join(unique_warnings))
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -94,7 +94,7 @@ def main(lims, args):
         abstract += "WARNING: LOW SAMPLE VOLUME(S)!"
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

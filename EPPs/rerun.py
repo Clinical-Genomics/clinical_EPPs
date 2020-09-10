@@ -97,7 +97,6 @@ def routeAnalytes(Inv, Seq, stop_processes):
     nr_inv =  len(list(set(GoTo_Inv)))
 
     msg = str( nr_seq ) + " Samples were added to the " + args.rerun_step + " Step. " + str( nr_inv ) + " Samples were added to the " + args.continue_step + " Step."
-    print msg
     status = "OK"
     api.reportScriptStatus( args.stepURI, status, msg )
 
@@ -124,7 +123,7 @@ def main():
     SeqURI = getStageURI( args.workflow, args.rerun_step )
     InvURI = getStageURI( args.workflow, args.continue_step )
     if SeqURI == "" or InvURI == "":
-        print "Could not retrieve the workflow / stage combination"
+        print("Could not retrieve the workflow / stage combination", file=sys.stderr)
 
     
     routeAnalytes(InvURI, SeqURI, args.stop_processes)

@@ -92,7 +92,7 @@ def main(lims, args):
     if CUDF.failded_udfs or CUDF.falied_processes:
         sys.exit(CUDF.falied_processes + CUDF.failded_udfs)
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
