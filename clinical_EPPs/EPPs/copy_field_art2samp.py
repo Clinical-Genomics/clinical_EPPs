@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -40,7 +40,7 @@ def main(lims, args):
     if CUDF.failed_udfs:
         sys.exit('Failed to copy udf for %s samples.' % (str(CUDF.failed_udfs)) )
     else:
-        print >> sys.stderr, 'UDFs were successfully copied!'
+        print('UDFs were successfully copied!', file=sys.stderr)
 
 
 if __name__ == "__main__":

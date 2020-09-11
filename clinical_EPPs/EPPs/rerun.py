@@ -50,7 +50,7 @@ def getStageURI( wfName, stageName ):
 
 def routeAnalytes(Inv, Seq, stop_processes):
     hist_dict = make_hist_dict(args.limsid, stop_processes)
-    hist_dict_uri = {k.uri : v.uri for k, v in hist_dict.items()}
+    hist_dict_uri = {k.uri : v.uri for k, v in list(hist_dict.items())}
     ANALYTES = []       ### Cache, prevents unnessesary GET calls
     GoTo_Inv = []
     GoTo_Seq = []
@@ -97,7 +97,7 @@ def routeAnalytes(Inv, Seq, stop_processes):
     nr_inv =  len(list(set(GoTo_Inv)))
 
     msg = str( nr_seq ) + " Samples were added to the " + args.rerun_step + " Step. " + str( nr_inv ) + " Samples were added to the " + args.continue_step + " Step."
-    print msg
+    print(msg)
     status = "OK"
     api.reportScriptStatus( args.stepURI, status, msg )
 
@@ -124,7 +124,7 @@ def main():
     SeqURI = getStageURI( args.workflow, args.rerun_step )
     InvURI = getStageURI( args.workflow, args.continue_step )
     if SeqURI == "" or InvURI == "":
-        print "Could not retrieve the workflow / stage combination"
+        print("Could not retrieve the workflow / stage combination")
 
     
     routeAnalytes(InvURI, SeqURI, args.stop_processes)

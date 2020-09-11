@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -27,7 +27,7 @@ class CopyUDF():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def get_udfs_from_lowpriostep(self, outpt):
         sample = outpt.samples[0].name
@@ -89,7 +89,7 @@ def main(lims, args):
     if CUDF.failded_udfs or CUDF.falied_processes:
         sys.exit(CUDF.falied_processes + CUDF.failded_udfs)
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument('-r', dest = 'priostep', default = None,
                         help=('Use this option if there is a step with higher prio then the qc-step.'))
     args = parser.parse_args()
-    print args.log
+    print(args.log)
     logging.basicConfig(filename = args.log, filemode='w', level=logging.DEBUG)
     logging.info('Sample')
     lims = Lims(BASEURI, USERNAME, PASSWORD)

@@ -36,7 +36,7 @@ class NovaSeqSampleVolumes():
         """Get outpout artifacts and count nr samples"""
 
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
         self.nr_samples = len(self.artifacts)
 
     def get_process_udfs(self):
@@ -128,7 +128,7 @@ def main(lims, args):
         unique_warnings = list(set(NSSV.warning))
         sys.exit(' '.join(unique_warnings))
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 
 if __name__ == "__main__":

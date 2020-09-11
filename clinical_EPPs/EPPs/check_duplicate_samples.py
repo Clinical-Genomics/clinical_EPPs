@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -31,7 +31,7 @@ def main(lims, args):
     if duplicates:
         sys.exit('Samples: ' +', '.join(duplicates)+ ' appeared more than once in this step.')
     else:
-        print >> sys.stderr, 'No duplicated samples!' 
+        print('No duplicated samples!', file=sys.stderr) 
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

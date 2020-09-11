@@ -22,8 +22,8 @@ class PlateSetup():
     def __init__(self, process, MAF_file):
         self.process = process
         self.out_analytes = [a for a in process.all_outputs() if a.type=='Analyte']
-        self.rows = map(chr, range(97, 105))
-        self.columns = range(1,13)
+        self.rows = list(map(chr, list(range(97, 105))))
+        self.columns = list(range(1,13))
         self.container_names = list(set([a.container.name for a in self.out_analytes]))
         self.art_dict = {key: {} for key in self.container_names}
         self.MAF_file = MAF_file + '_Plate_layout.xls'
@@ -83,7 +83,7 @@ def main(lims, args):
         logging.warning(abstract)
         sys.exit(abstract)
     else:
-        print >> sys.stderr, 'MAF Plate Layout file was succsessfully generated!'
+        print('MAF Plate Layout file was succsessfully generated!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

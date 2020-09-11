@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
@@ -80,8 +80,8 @@ class PassSamples():
         if missing_cust:
             sys.exit( 'Could not queue samples to sequence aggregation because the following samples are missing customer udfs: '+', '.join(missing_cust))
         self._make_unique_pools()
-        self.send_to_next_step += self.uniq_artifacts.values()
-        self.send_to_next_step += self.uniqe_RML_arts.values()
+        self.send_to_next_step += list(self.uniq_artifacts.values())
+        self.send_to_next_step += list(self.uniqe_RML_arts.values())
         self.send_to_next_step = list(set(self.send_to_next_step))
 
     def _get_pools_from_sort(self, sample): ##---> will give manny duplicates
@@ -161,7 +161,7 @@ def main(lims, args):
     abstract = 'Passed '+str(len(PS.send_to_next_step))+' arts to next step.'
     if PS.remove_from_WF:
         abstract += ' Removed ' + str(len(PS.remove_from_WF))+ ' artifacts from the wf.'
-    print >> sys.stdout,abstract ## How do "flush this message in a correct way?"
+    print(abstract, file=sys.stdout) ## How do "flush this message in a correct way?"
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

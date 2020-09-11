@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -70,7 +70,7 @@ class DenaturateXP():
         """Get output artifacts"""
 
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
  
 
     def set_udfs(self):
@@ -80,12 +80,12 @@ class DenaturateXP():
 
         flowcell_type = self.process.all_inputs()[0].udf.get('Flowcell Type')
 
-        for key, val in self.process_settings[flowcell_type].items():
+        for key, val in list(self.process_settings[flowcell_type].items()):
             self.process.udf[key] = val
         self.process.put()
 
         for art in self.artifacts:
-            for key, val in self.artifact_settings[flowcell_type].items():
+            for key, val in list(self.artifact_settings[flowcell_type].items()):
                 art.udf[key] = val
                 art.put()
 

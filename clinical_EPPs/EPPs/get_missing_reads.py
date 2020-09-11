@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -29,7 +29,7 @@ class MissingReads():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
 
     def get_missing_reads(self):
@@ -91,7 +91,7 @@ def main(lims, args):
     abstract = ("Updated {ca} sample(s), skipped {ia} sample(s) with "
                 "wrong and/or blank values for some udfs.").format(**d)
 
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

@@ -1,5 +1,5 @@
 #!/home/glsai/miniconda2/envs/epp_master/bin/python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -67,7 +67,7 @@ def main(lims, args):
     ASBP.get_artifacts()
     ASBP.make_average_size()
     ASBP.set_average_size()
-    print >> sys.stderr, "'Average Size (bp)' has ben set."
+    print("'Average Size (bp)' has ben set.", file=sys.stderr)
 
 
 if __name__ == "__main__":

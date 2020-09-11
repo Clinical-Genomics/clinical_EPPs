@@ -80,7 +80,7 @@ def routeAnalytes( stageURI, input_art , udf):
         msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
     else:
         msg = r
-    print msg
+    print(msg)
 
 
 def setupArguments():

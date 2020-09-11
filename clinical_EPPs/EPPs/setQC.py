@@ -105,7 +105,7 @@ def main(lims,args):
     if C2QC.qc_fail or C2QC.missing_udf:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

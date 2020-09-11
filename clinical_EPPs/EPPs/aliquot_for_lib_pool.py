@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -33,7 +33,7 @@ class Pool2Sequence():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def get_process_udfs(self):
         try:
@@ -94,7 +94,7 @@ def main(lims, args):
         abstract += "WARNING: LOW SAMPLE VOLUME(S)!"
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

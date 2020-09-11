@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -42,7 +42,7 @@ class Project(db.Model):
     projectname = Column(String(255), nullable=False)
     time = Column(DateTime, nullable=False)
     def __repr__(self):
-        return (u"{self.__class__.__name__}: {self.project_id}"
+        return ("{self.__class__.__name__}: {self.project_id}"
                 .format(self=self))
 
 class Sample(db.Model):
@@ -145,7 +145,7 @@ class BCLconv():
         self.reads_treshold = 1000
         all_artifacts = self.process.all_outputs(unique=True)
         self.demux_data = []
-        self.not_updated_arts = len(filter(lambda a: len(a.samples) == 1 , all_artifacts))
+        self.not_updated_arts = len([a for a in all_artifacts if len(a.samples) == 1])
         self.failed_arts = 0
 
     def get_artifacts(self):
@@ -220,7 +220,7 @@ def main(lims, args):
     if BCL.failed_arts or BCL.not_updated_arts:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

@@ -64,7 +64,7 @@ def main(lims, pid):
     if SMR.failed_samples:
         sys.exit('Faild to get missing reads for '+str(SMR.failed_samples)+' sample.')
     else:
-        print >> sys.stderr, 'Reads Missing has been set for all samples.'
+        print('Reads Missing has been set for all samples.', file=sys.stderr)
 
 
 if __name__ == "__main__":

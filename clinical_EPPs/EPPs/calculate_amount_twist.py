@@ -25,7 +25,7 @@ class CalculationsTwist:
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.pools = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.pools = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def calculate_volumes(self):
         for pool in self.pools:
@@ -57,7 +57,7 @@ def main(lims,args):
     if AT.failed:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

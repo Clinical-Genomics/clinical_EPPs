@@ -61,7 +61,7 @@ class SamplePlacementMap():
         html.append(self.process.type.name) #self.process.protocol_name
         html.append('</h1></div>')
         html.append('Created by: ' + USERNAME + ', ' + str(date.today().isoformat()))
-        for container, container_info in self.placement_map.items():
+        for container, container_info in list(self.placement_map.items()):
             # Data about this specific container
             html.append( '<table class="group-contents"><br><br><thead><tr><th class="group-header" colspan="10"><h2>Sample placement map: '+ container.name )
             html.append( '</h2>' )
@@ -78,7 +78,7 @@ class SamplePlacementMap():
             html.append( '<tbody>' )
     
             ## artifact list
-            for dest_well , well_data in container_info.items():
+            for dest_well , well_data in list(container_info.items()):
                 sample = well_data['sample']
                 html.append( '<tr><td style="width: 7%;">' )
                 html.append( sample.project.name )
@@ -102,7 +102,7 @@ class SamplePlacementMap():
 
             ## VISUAL Platemap
             ## column headers
-            coulmns = range(1,13)
+            coulmns = list(range(1,13))
             rows = ['A','B','C','D','E','F','G','H']
             html.append( '<table class="print-container-view"><thead><tr><th>&nbsp;</th>')
             for col in coulmns:

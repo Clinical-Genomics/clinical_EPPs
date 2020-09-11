@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import re
 import sys
 import xml.dom.minidom
@@ -23,7 +23,7 @@ class glsapiutil2:
     ## Housekeeping methods
 
     def __init__( self ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.hostname = ""
         self.auth_handler = None
         self.version = "v2"
@@ -31,24 +31,24 @@ class glsapiutil2:
         self.base_uri = ""
 
     def setHostname( self, hostname ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.hostname = hostname
 
     def setVersion( self, version ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.version = version
 
     def setURI( self, uri ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.uri = uri
 
     def getBaseURI( self ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         return self.base_uri
 
     def setup( self, user, password ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
         if len(self.uri) > 0:
             tokens = self.uri.split( "/" )
@@ -59,26 +59,26 @@ class glsapiutil2:
             self.base_uri = self.hostname + '/api/' + self.version
 
         ## setup up API plumbing
-        password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         password_manager.add_password( None, self.base_uri, user, password )
-        self.auth_handler = urllib2.HTTPBasicAuthHandler( password_manager )
-        opener = urllib2.build_opener( self.auth_handler )
-        urllib2.install_opener( opener )
+        self.auth_handler = urllib.request.HTTPBasicAuthHandler( password_manager )
+        opener = urllib.request.build_opener( self.auth_handler )
+        urllib.request.install_opener( opener )
 
     ## REST Methods
 
     def GET( self, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
         responseText = ""
         thisXML = ""
 
         try:
-            thisXML = urllib2.urlopen( url ).read()
-        except urllib2.HTTPError, e:
+            thisXML = urllib.request.urlopen( url ).read()
+        except urllib.error.HTTPError as e:
             responseText = e.msg
-        except urllib2.URLError, e:
+        except urllib.error.URLError as e:
             if e.strerror is not None:
                 responseText = e.strerror
             elif e.reason is not None:
@@ -86,21 +86,21 @@ class glsapiutil2:
             else:
                 responseText = e.message
         except:
-            responseText = str(sys.exc_type) + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + str(sys.exc_info()[1])
 
         if len(responseText) > 0:
-            print( "Error trying to access " + url )
+            print(( "Error trying to access " + url ))
             print( responseText )
 
         return thisXML
 
     def PUT( self, xmlObject, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
-        opener = urllib2.build_opener(self.auth_handler)
+        opener = urllib.request.build_opener(self.auth_handler)
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_data( xmlObject )
         req.get_method = lambda: 'PUT'
         req.add_header('Accept', 'application/xml')
@@ -110,20 +110,20 @@ class glsapiutil2:
         try:
             response = opener.open( req )
             responseText = response.read()
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             responseText = e.read()
         except:
-            responseText = str(sys.exc_type) + " " + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
 
         return responseText
 
     def POST( self, xmlObject, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
-        opener = urllib2.build_opener(self.auth_handler)
+        opener = urllib.request.build_opener(self.auth_handler)
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_data( xmlObject )
         req.get_method = lambda: 'POST'
         req.add_header('Accept', 'application/xml')
@@ -133,10 +133,10 @@ class glsapiutil2:
         try:
             response = opener.open( req )
             responseText = response.read()
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             responseText = e.read()
         except:
-            responseText = str(sys.exc_type) + " " + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
 
         return responseText
 
@@ -159,7 +159,7 @@ class glsapiutil2:
     @staticmethod
     def setUDF( DOM, udfname, udfvalue ):
 
-        if DEBUG > 2: print( DOM.toprettyxml() )
+        if DEBUG > 2: print(( DOM.toprettyxml() ))
 
         ## are we dealing with batch, or non-batch DOMs?
         if DOM.parentNode is None:
@@ -179,7 +179,7 @@ class glsapiutil2:
                         DOM.removeChild( element )
                     else:
                         DOM.childNodes[0].removeChild( element )
-                except xml.dom.NotFoundErr, e:
+                except xml.dom.NotFoundErr as e:
                     if DEBUG > 0: print( "Unable to Remove existing UDF node" )
 
                 break
@@ -208,7 +208,7 @@ class glsapiutil2:
         try:
             self.PUT( newXML, newuri )
         except:
-            print message
+            print(message)
 
     def getArtifacts( self, LUIDs ):
 
@@ -293,39 +293,39 @@ class glsapiutil:
     ## Housekeeping methods
 
     def __init__( self ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.hostname = ""
         self.auth_handler = ""
         self.version = "v1"
 
     def setHostname( self, hostname ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.hostname = hostname
 
     def setVersion( self, version ):
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
         self.version = version
 
     def setup( self, user, password ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
         ## setup up API plumbing
-        password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         password_manager.add_password( None, self.hostname + '/api/' + self.version, user, password )
-        self.auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
-        opener = urllib2.build_opener(self.auth_handler)
-        urllib2.install_opener(opener)
+        self.auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
+        opener = urllib.request.build_opener(self.auth_handler)
+        urllib.request.install_opener(opener)
 
     ## REST methods
 
     def createObject( self, xmlObject, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
-        opener = urllib2.build_opener(self.auth_handler)
+        opener = urllib.request.build_opener(self.auth_handler)
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_data( xmlObject )
         req.get_method = lambda: 'POST'
         req.add_header('Accept', 'application/xml')
@@ -335,20 +335,20 @@ class glsapiutil:
         try:
             response = opener.open( req )
             responseText = response.read()
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             responseText = e.read()
         except:
-            responseText = str(sys.exc_type) + " " + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
 
         return responseText
 
     def updateObject( self, xmlObject, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
-        opener = urllib2.build_opener(self.auth_handler)
+        opener = urllib.request.build_opener(self.auth_handler)
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_data( xmlObject )
         req.get_method = lambda: 'PUT'
         req.add_header('Accept', 'application/xml')
@@ -358,25 +358,25 @@ class glsapiutil:
         try:
             response = opener.open( req )
             responseText = response.read()
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             responseText = e.read()
         except:
-            responseText = str(sys.exc_type) + " " + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
 
         return responseText
 
     def getResourceByURI( self, url ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
         responseText = ""
         xml = ""
 
         try:
-            xml = urllib2.urlopen( url ).read()
-        except urllib2.HTTPError, e:
+            xml = urllib.request.urlopen( url ).read()
+        except urllib.error.HTTPError as e:
             responseText = e.msg
-        except urllib2.URLError, e:
+        except urllib.error.URLError as e:
             if e.strerror is not None:
                 responseText = e.strerror
             elif e.reason is not None:
@@ -384,21 +384,21 @@ class glsapiutil:
             else:
                 responseText = e.message
         except:
-            responseText = str(sys.exc_type) + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + str(sys.exc_info()[1])
 
         if len(responseText) > 0:
-            print( "Error trying to access " + url )
+            print(( "Error trying to access " + url ))
             print( responseText )
 
         return xml
 
     def getBatchResourceByURI( self, url, links ):
 
-        if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
+        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
 
-        opener = urllib2.build_opener(self.auth_handler)
+        opener = urllib.request.build_opener(self.auth_handler)
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_data( links )
         req.get_method = lambda: 'POST'
         req.add_header('Accept', 'application/xml')
@@ -408,10 +408,10 @@ class glsapiutil:
         try:
             response = opener.open( req )
             responseText = response.read()
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             responseText = e.read()
         except:
-            responseText = str(sys.exc_type) + " " + str(sys.exc_value)
+            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
 
         return responseText
 
@@ -434,7 +434,7 @@ class glsapiutil:
     @staticmethod
     def setUDF( DOM, udfname, udfvalue ):
 
-        if DEBUG > 2: print( DOM.toprettyxml() )
+        if DEBUG > 2: print(( DOM.toprettyxml() ))
 
         ## are we dealing with batch, or non-batch DOMs?
         if DOM.parentNode is None:
@@ -454,7 +454,7 @@ class glsapiutil:
                         DOM.removeChild( element )
                     else:
                         DOM.childNodes[0].removeChild( element )
-                except xml.dom.NotFoundErr, e:
+                except xml.dom.NotFoundErr as e:
                     if DEBUG > 0: print( "Unable to Remove existing UDF node" )
 
                 break
@@ -525,7 +525,7 @@ class glsapiutil:
         try:
             self.updateObject( newXML, newuri )
         except:
-            print message
+            print(message)
 
     @staticmethod
     def removeState( xml ):
@@ -570,7 +570,7 @@ class stepOutput:
 
     def setProperty(self, propName, propValue): self.__props[ propName ] = propValue
     def getProperty(self, propName):
-        if propName in self.__props.keys():
+        if propName in list(self.__props.keys()):
             return self.__props[ propName ]
         else:
             return ""
@@ -581,7 +581,7 @@ class stepOutput:
         txt += " Type:" + self.__type
         txt += " Shared:" + str(self.__isShared)
 
-        for k in self.__props.keys():
+        for k in list(self.__props.keys()):
             txt += " " + k + ":" + str(self.__props[ k ])
 
         return txt

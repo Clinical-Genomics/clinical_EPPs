@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -39,7 +39,7 @@ class Pool():
                 reagent_types = lims.get_reagent_types(name=name)
                 sequence = reagent_types[0].sequence #(Will never be morte than one. names are unique)
                 self.all_indexes.append(sequence)
-                if sequence in self.index_dict.keys():
+                if sequence in list(self.index_dict.keys()):
                     self.index_dict[sequence][art] = {'name':name,'sequence':sequence}
                 else:
                     self.index_dict[sequence] = {art : {'name':name,'sequence':sequence}}
@@ -64,7 +64,7 @@ class CheckIndex():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs()
-        self.pools = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.pools = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def check_each_pool(self):
         for pool in self.pools:
@@ -80,7 +80,7 @@ class CheckIndex():
         for index in P.duplicates:
             self.duplicates = True
             art_dict = P.index_dict[index]
-            for art, index_info in art_dict.items():
+            for art, index_info in list(art_dict.items()):
                 self.logfile.write('\n'+', '.join([art.name, index_info['name'], index_info['sequence']]))
 
     def close_log(self):
@@ -96,7 +96,7 @@ def main(lims, args):
     if CI.duplicates:
         sys.exit('Warning: Duplicated indexes. See log file!')
     else:
-        print >> sys.stderr, 'No duplicate indexes'
+        print('No duplicate indexes', file=sys.stderr)
 
 
 if __name__ == "__main__":

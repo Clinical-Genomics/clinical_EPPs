@@ -26,16 +26,16 @@ class CopyUDF():
     def get_udfs(self):
         """Geting the copy task udfs from the step level. These decides what udfs to copy
         and from what step they should be copied"""
-        for udf, value in self.process.udf.items():
+        for udf, value in list(self.process.udf.items()):
             if 'Copy task' in udf:
                 k,v = udf.split('-')
                 if v.strip() == 'Source Step':
                     self.source_step_types[value] = []
-                if k.strip() in self.copy_tasks.keys():
+                if k.strip() in list(self.copy_tasks.keys()):
                     self.copy_tasks[k.strip()][v.strip()] = value
                 else:
                     self.copy_tasks[k.strip()] = {v.strip():value}
-        for copy_task , source in self.copy_tasks.items():
+        for copy_task , source in list(self.copy_tasks.items()):
             self.source_step_types[source['Source Step']].append(source['Source Field'])
 
     def copy_udfs(self):
@@ -43,7 +43,7 @@ class CopyUDF():
         for art in self.in_arts:
             qc_flag = ''
             source_steps = self._get_correct_processes(art)
-            for type, source_step in source_steps.items():
+            for type, source_step in list(source_steps.items()):
                 for output in source_step.outputs_per_input(art.id):
                     qc_flag_update = Artifact(lims, id=output.id).qc_flag
                     if qc_flag_update == 'UNKNOWN':
@@ -74,8 +74,8 @@ class CopyUDF():
         processes = lims.get_processes(inputartifactlimsid=art.id)
         for process in processes:
             process_type = process.type.name
-            if process_type in self.source_step_types.keys():
-                if process_type not in source_steps.keys():
+            if process_type in list(self.source_step_types.keys()):
+                if process_type not in list(source_steps.keys()):
                     source_steps[process_type] = process
                 elif source_steps[process_type].date_run < process.date_run:
                     source_steps[process_type] = process
@@ -92,7 +92,7 @@ def main(lims, args):
         failed = ' ,'.join(list(set(CUDF.failed_udfs)))
         sys.exit('failed to copy some udfs for sample(s): '+ failed)
     else:
-        print >> sys.stderr, 'UDFs were succsessfully copied!'
+        print('UDFs were succsessfully copied!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

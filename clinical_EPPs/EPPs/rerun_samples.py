@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
@@ -81,7 +81,7 @@ class PassSamples():
     def check_same_sample_in_many_rerun_pools(self):
         """Check that the same sample does not occure in more than one of the pools to rerun."""
         all_samples = []
-        for s in self.rerun_arts.keys():
+        for s in list(self.rerun_arts.keys()):
             all_samples += s.split('_')
         for s in set(all_samples):
             all_samples.remove(s)
@@ -105,7 +105,7 @@ class PassSamples():
         sys.exit('Could not get the next step Stage. Contact lims developer.')
 
     def assign_arts(self):
-        for key, art in self.rerun_arts.items():
+        for key, art in list(self.rerun_arts.items()):
             self.make_assig_xml(art.uri, self.rerun_stage)
 
     def make_assig_xml(self, art_uri, next_step_uri):
@@ -131,10 +131,10 @@ def main(lims, args):
 
     abstract = ''
     if PS.rerun_arts:
-        abstract += str(len(PS.rerun_arts)) + ' artifacts were sent for rerun: '+', '.join(PS.rerun_arts.keys())+'.'
+        abstract += str(len(PS.rerun_arts)) + ' artifacts were sent for rerun: '+', '.join(list(PS.rerun_arts.keys()))+'.'
     if PS.warning_duplicate_samples:
         abstract += 'WARNING: some samples were sent for rerun as part of more than one pool'
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

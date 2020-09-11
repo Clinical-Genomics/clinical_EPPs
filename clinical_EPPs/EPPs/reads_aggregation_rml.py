@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -90,10 +90,10 @@ def main(lims, args):
     SR.set_udfs()
 
     abstract = "Reads summed for: "
-    for k, v in SR.passed_pool_replicates.items():
+    for k, v in list(SR.passed_pool_replicates.items()):
         abstract += str(k) +' from '+str(v)+' lanes, '
 
-    print >> sys.stderr, abstract 
+    print(abstract, file=sys.stderr) 
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

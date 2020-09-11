@@ -48,10 +48,10 @@ class SamplePlacementMap():
             hist_dict = make_hist_dict(self.process.id, [self.other_source])
         else:
             all_artifacts = self.process.all_outputs(unique=True)
-            artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+            artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
         if hist_dict:
-            for dest_art, source_art in hist_dict.items():
+            for dest_art, source_art in list(hist_dict.items()):
                 self._make_source_dest_dict(source_art, dest_art)
             return
         elif artifacts:
@@ -69,7 +69,7 @@ class SamplePlacementMap():
         html.append(self.process.type.name) #self.process.protocol_name
         html.append('</h1></div>')
         html.append('Created by: ' + USERNAME + ', ' + str(date.today().isoformat()))
-        for container, container_info in self.mastermap.items():
+        for container, container_info in list(self.mastermap.items()):
             # Data about this specific container
             html.append( '<table class="group-contents"><br><br><thead><tr><th class="group-header" colspan="10"><h2>Sample placement map: '+ container.name )
             html.append( '</h2>' )
@@ -86,7 +86,7 @@ class SamplePlacementMap():
             html.append( '<tbody>' )
     
             ## artifact list
-            for dest_well , well_data in container_info.items():
+            for dest_well , well_data in list(container_info.items()):
                 sample = well_data['sample']
                 original_container = sample.udf.get('Original Container')
                 source_well = well_data['source_well'] 
@@ -111,7 +111,7 @@ class SamplePlacementMap():
             ## VISUAL Platemap
     
             ## column headers
-            coulmns = range(1,13)
+            coulmns = list(range(1,13))
             rows = ['A','B','C','D','E','F','G','H']
             html.append( '<table class="print-container-view"><thead><tr><th>&nbsp;</th>')
             for col in coulmns:
@@ -159,7 +159,7 @@ class SamplePlacementMap():
         html.append(self.process.type.name) #self.process.protocol_name
         html.append('</h1></div>')
         html.append('Created by: ' + USERNAME + ', ' + str(date.today().isoformat()))
-        for container, container_info in self.mastermap.items():
+        for container, container_info in list(self.mastermap.items()):
             # Data about this specific container
             html.append( '<table class="group-contents"><br><br><thead><tr><th class="group-header" colspan="10"><h2>Sample placement map: '+ container.name )
             html.append( '</h2>' )
@@ -177,7 +177,7 @@ class SamplePlacementMap():
 
             ## artifact list
             for dest_well in ['1:1' ,'2:1' ,'3:1' ,'4:1' ,'5:1' ,'6:1' ,'7:1' ,'8:1']:
-                if dest_well in container_info.keys():
+                if dest_well in list(container_info.keys()):
                     well_data = container_info[dest_well]
                     sample = well_data['sample']
                     source_well = well_data['source_well']

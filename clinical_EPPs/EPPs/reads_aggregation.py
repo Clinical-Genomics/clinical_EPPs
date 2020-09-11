@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -111,11 +111,11 @@ def main(lims, args):
         SRRML = SumReadsRML(PAS.pools, args.process_types)
         SRRML.sum_reads()
         abstract += "Reads summed for: "
-        for k, v in SRRML.passed_pools.items():
+        for k, v in list(SRRML.passed_pools.items()):
             abstract += str(k) +' from '+str(v)+' lanes, '
 
 
-    print >> sys.stderr, abstract
+    print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

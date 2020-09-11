@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -46,7 +46,7 @@ class File2UDF():
 
 
     def get_artifacts(self):
-        out_artifacts = filter(lambda a: a.output_type == "ResultFile" , self.all_artifacts)
+        out_artifacts = [a for a in self.all_artifacts if a.output_type == "ResultFile"]
         for out_art in out_artifacts:
             art =  out_art.input_artifact_list()[0]
             well = art.location[1].replace(':','')
@@ -56,7 +56,7 @@ class File2UDF():
         if os.path.isfile(result_file):
             self.result_file = result_file
         else:
-            shared_files = filter(lambda a: a.output_type == "SharedResultFile" , self.all_artifacts)
+            shared_files = [a for a in self.all_artifacts if a.output_type == "SharedResultFile"]
             for shared_file in shared_files:
                 if shared_file.id == result_file:
                     self.result_file = shared_file.files[0].content_location.split('scilifelab.se')[1]
@@ -101,7 +101,7 @@ def main(lims, args):
     if F2UDF.failed_arts:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     # Initialize parser with standard arguments and description

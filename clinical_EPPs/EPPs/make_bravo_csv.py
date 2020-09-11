@@ -1,5 +1,5 @@
 #!/home/glsai/miniconda2/envs/epp_master/bin/python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -27,7 +27,7 @@ class BravoCSV():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def make_csv_1471(self, csv_file):
         csv_file = csv_file+'bravo_normalization.csv'
@@ -86,7 +86,7 @@ def main(lims, args):
         sys.exit(abstract)
     else:
         abstract = "Bravo CSV sucsessfully generated."
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

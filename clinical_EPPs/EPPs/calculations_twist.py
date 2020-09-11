@@ -29,7 +29,7 @@ class CalculationsTwist:
             self.artifacts = [io[1]['uri'] for io in self.iom if io[1]['output-generation-type'] == 'PerInput']
         else:
             all_artifacts = self.process.all_outputs(unique=True)
-            self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+            self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def calculate_volumes_for_aliquot(self):
         for art in self.artifacts:
@@ -131,7 +131,7 @@ def main(lims,args):
     if AT.failed or AT.amount_fail:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

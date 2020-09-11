@@ -66,7 +66,7 @@ class MAF2CSV():
         df.to_excel(writer, sheet_name='Sample information', index=False, startcol=0)
         worksheet = writer.sheets['Sample information']
         worksheet.set_column('A:T', 10)
-        for cell, comment in self.comments.items():
+        for cell, comment in list(self.comments.items()):
             worksheet.write_comment(cell, comment)
         writer.save()
 
@@ -99,7 +99,7 @@ def main(lims, args):
         logging.warning(abstract)
         sys.exit(abstract)
     else:
-        print >> sys.stderr, 'MAF xlsx file was succsessfully generated!'
+        print('MAF xlsx file was succsessfully generated!', file=sys.stderr)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

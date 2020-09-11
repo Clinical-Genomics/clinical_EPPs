@@ -57,7 +57,7 @@ class SetQC:
             for artifact in self.artifacts:
                 qc_flag = 'UNKNOWN'
                 missing_udf = 0
-                for udf, treshold in self.udfs.items():
+                for udf, treshold in list(self.udfs.items()):
                     if udf in artifact.udf and artifact.udf[udf]:
                         if artifact.udf[udf] < float(treshold):
                             qc_flag = "FAILED"
@@ -94,7 +94,7 @@ def main(lims,args):
     if C2QC.qc_fail or C2QC.missing_udf:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

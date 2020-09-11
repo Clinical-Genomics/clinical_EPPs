@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -27,7 +27,7 @@ class EBVol():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def apply_calculations(self):
         for art in self.artifacts:
@@ -59,7 +59,7 @@ def main(lims, args):
     if EBV.failed_arts:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

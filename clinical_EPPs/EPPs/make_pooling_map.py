@@ -25,7 +25,7 @@ class SamplePlacementMap():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.pools = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.pools = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def make_html(self, resultfile):
         ### HEADER ###

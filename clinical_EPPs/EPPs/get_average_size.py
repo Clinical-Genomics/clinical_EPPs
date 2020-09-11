@@ -1,5 +1,5 @@
 #!/home/glsai/miniconda2/envs/epp_master/bin/python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -30,7 +30,7 @@ class AverageSizeBP():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "ResultFile"]
 
     def make_average_size(self):
         for art in self.artifacts:
@@ -56,7 +56,7 @@ def main(lims, args):
     ASBP.get_artifacts()
     ASBP.make_average_size()
     ASBP.set_average_size()
-    print >> sys.stderr, "'Average Size (bp)' has ben set."
+    print("'Average Size (bp)' has ben set.", file=sys.stderr)
 
 
 if __name__ == "__main__":

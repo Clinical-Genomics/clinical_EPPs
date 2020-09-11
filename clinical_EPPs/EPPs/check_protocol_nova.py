@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
@@ -44,7 +44,7 @@ class CheckNovaSettings():
         """Get output artifacts"""
 
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def check_protocol_setings(self):
         """Will exit with warning if wrong protocol type"""
@@ -57,7 +57,7 @@ class CheckNovaSettings():
         """Sets the denatudation volumes for Standard samples."""
 
         if self.protocol_type == 'NovaSeq Standard':
-            for key, val in self.denaturation_volumes[self.flowcell_type].items():
+            for key, val in list(self.denaturation_volumes[self.flowcell_type].items()):
                 self.process.udf[key] = val
             self.process.put()
 

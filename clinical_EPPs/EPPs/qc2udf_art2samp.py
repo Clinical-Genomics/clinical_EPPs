@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -24,7 +24,7 @@ class ArtQC2SampUDF():
         self.dest_udf = dest_udf
         if sequencing:
             all_artifacts = self.process.all_outputs(unique=True)
-            self.artifacts = filter(lambda a: a.output_type == "Analyte" ,all_artifacts)
+            self.artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
         else:
             self.artifacts = self.process.all_inputs(unique=True)
         self.passed_samps = []
@@ -64,7 +64,7 @@ def main(lims, args):
         sys.exit(abstract)
     else:
         abstract = ("The '{du}' UDF, was successfully set on {pa} samples.").format(**d)
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

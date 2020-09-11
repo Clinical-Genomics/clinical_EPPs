@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 from genologics.lims import Lims
 from genologics.config import BASEURI,USERNAME,PASSWORD
@@ -105,7 +105,7 @@ def main(lims, args):
     PS.rout()
 
     abstract = 'Passed '+str(PS.nr_samps)+' samples and '+str(PS.nr_pools) +' pools to the NovaSeq Protocol.'
-    print >> sys.stdout,abstract
+    print(abstract, file=sys.stdout)
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=DESC)

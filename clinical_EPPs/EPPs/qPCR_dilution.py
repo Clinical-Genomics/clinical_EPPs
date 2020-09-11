@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -43,7 +43,7 @@ class QpcrDilution():
     def get_artifacts(self):
         in_arts = self.process.all_inputs(unique=True)
         all_artifacts = self.process.all_outputs(unique=True)
-        out_artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
+        out_artifacts = [a for a in all_artifacts if a.output_type == "ResultFile"]
         for a in out_artifacts:
             samp = a.samples[0].id
             self.artifacts[samp] = a
@@ -73,7 +73,7 @@ class QpcrDilution():
                 orwell = WELL_TRANSFORMER[well]['well']
                 dilut = WELL_TRANSFORMER[well]['dilut']
                 if dilut in ['1E03','2E03','1E04']:
-                    if not orwell in self.dilution_data.keys():
+                    if not orwell in list(self.dilution_data.keys()):
                         self.dilution_data[orwell] = {
                             'SQ' : {'1E03':[],'2E03':[],'1E04':[]},
                             'Cq' : {'1E03':[],'2E03':[],'1E04':[]}}
@@ -84,14 +84,14 @@ class QpcrDilution():
         """ For each sample:
             Checks dilution thresholds as described in am doc 1499.
             Calculates concentration and sets udfs for those samples that passed the check. """
-        for samp_id, art in self.artifacts.items():
+        for samp_id, art in list(self.artifacts.items()):
             self.log.write('\n############################################\n')
             self.log.write('Sample: ' + samp_id + '\n')
             try:
                 PA = PerArtifact(art, self.dilution_data, samp_id, self.log)
                 PA.check_dilution_range()
                 PA.check_distance_find_outlyer()
-                for dil in PA.index.keys():
+                for dil in list(PA.index.keys()):
                     ind = PA.index[dil]
                     if type(ind)==int:
                         self.removed_replicates += 1
@@ -155,7 +155,7 @@ class PerArtifact():
                 its index is stored in self.index.
             b)  If the two remaining Cq-values still differ by more than 0.4,
                 The self.failed_sample is set to true"""
-        for dil, values in self.Cq.items():
+        for dil, values in list(self.Cq.items()):
             error_msg = 'To vide range of values for dilution: ' + dil + ' : ' + str(values)
             array = numpy.array(self.Cq[dil])   
             diff_from_mean = numpy.absolute(array - mean(array))
@@ -196,7 +196,7 @@ class PerArtifact():
             self._find_outlyer(D1_in_range, D2_in_range)
             if self.failed_sample:
                 return
-            for dilute, ind in self.index.items():
+            for dilute, ind in list(self.index.items()):
                 if type(ind)==int and len(self.Cq[dilute])==3:
                     self.poped_dilutes[dilute] = self.Cq[dilute].pop(ind) 
             D1_in_range, D2_in_range = self._check_distance()            
@@ -209,7 +209,7 @@ class PerArtifact():
         2. Calculates the zise adjusted concentraion based on the remaining SQ messuements.
         3. Sets the artifact udfs; Concentration, Concentration (nM) and Size (bp)"""
 
-        for dilute, ind in self.index.items():
+        for dilute, ind in list(self.index.items()):
             if type(ind)==int:
                 self.dilution_data[self.well]['SQ'][dilute].pop(ind)
                 # removing outlyer
@@ -346,7 +346,7 @@ def main(lims, args):
     if QD.failed_arts or QD.failed_samples:
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 if __name__ == "__main__":
     # Initialize parser with standard arguments and description

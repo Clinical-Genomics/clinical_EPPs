@@ -38,7 +38,7 @@ class Concentration2QC:
         
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
-        self.artifacts = filter(lambda a: a.output_type == "ResultFile" , all_artifacts)
+        self.artifacts = [a for a in all_artifacts if a.output_type == "ResultFile"]
         self.wrong_factor1 = self.check_udf_is_defined(self.artifacts, 'Concentration')
 
     def set_qc(self):
@@ -83,7 +83,7 @@ def main(lims,args):
     if len(C2QC.wrong_factor1)+ len(C2QC.wrong_factor2):
         sys.exit(abstract)
     else:
-        print >> sys.stderr, abstract
+        print(abstract, file=sys.stderr)
 
 
 if __name__ == "__main__":

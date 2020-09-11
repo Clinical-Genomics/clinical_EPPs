@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+
 from argparse import ArgumentParser
 
 from genologics.lims import Lims
@@ -29,7 +29,7 @@ class CheckIndex():
 
     def get_artifacts(self):
         all_artifacts = self.process.all_inputs()
-        self.all_artifacts = filter(lambda a: a.output_type == "Analyte" , all_artifacts)
+        self.all_artifacts = [a for a in all_artifacts if a.output_type == "Analyte"]
 
     def get_samples(self):
         for art in self.all_artifacts:
@@ -40,7 +40,7 @@ class CheckIndex():
                     sequence = reagent_types[0].sequence
                     sequence_short = sequence.split('-')[0]
                     self.all_indexes.append(sequence_short)
-                    if sequence_short in self.index_dict.keys():
+                    if sequence_short in list(self.index_dict.keys()):
                         self.index_dict[sequence_short][art] = {'name':name,'sequence':sequence}
                     else:
                         self.index_dict[sequence_short] = {art : {'name':name,'sequence':sequence}}
@@ -61,7 +61,7 @@ class CheckIndex():
         self.logfile.write(', '.join(['sample','index name', 'index sequence']))
         for index in self.duplicates:
             art_dict = self.index_dict[index]
-            for art, index_info in art_dict.items():
+            for art, index_info in list(art_dict.items()):
                 self.logfile.write('\n'+', '.join([art.name, index_info['name'], index_info['sequence']]))
         self.logfile.close()
 
@@ -77,7 +77,7 @@ def main(lims, args):
         CI.make_log(args.log)
         sys.exit('Warning: Duplicated indexes. See log file!')
     else:
-        print >> sys.stderr, 'No duplicate indexes'
+        print('No duplicate indexes', file=sys.stderr)
 
 
 if __name__ == "__main__":
