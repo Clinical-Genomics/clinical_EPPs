@@ -99,7 +99,6 @@ class glsapiutil2:
         if DEBUG > 0: print( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) )
 
         opener = urllib2.build_opener(self.auth_handler)
-
         req = urllib2.Request(url)
         req.add_data( xmlObject )
         req.get_method = lambda: 'PUT'
