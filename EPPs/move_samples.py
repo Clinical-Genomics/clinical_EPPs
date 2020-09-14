@@ -80,7 +80,6 @@ def routeAnalytes( stageURI, input_art , udf):
         msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
     else:
         msg = r
-    print(msg)
 
 
 def setupArguments():
@@ -101,12 +100,9 @@ def main():
 
     global args
     args = setupArguments()
-
     global api
-    api = glsapiutil.glsapiutil2()
-    api.setURI( args.stepURI )
-    api.setup( args.username, args.password )
-
+    api = glsapiutil.glsapiutil3()
+    api.setup( args.username, args.password, args.stepURI)
     stageURI = getStageURI(args.workflow, args.stage)
     if not stageURI:
         sys.exit( "Could not retrieve the workflow / stage combination")

@@ -1,146 +1,217 @@
-#!/usr/bin/env python
-import urllib.request, urllib.error, urllib.parse
-import re
+#!/usr/bin/env python3
+
+# This is version 3 of the glsapiutil library
+# to work with the Illumina BaseSpace ClarityLIMS API
+
+# It is now backwards compatible with Python 2.6
+
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+__version__ = '3.0a'
+
 import sys
+_py_version_ = sys.version_info
+import re
 import xml.dom.minidom
+import logging
+
+
+if _py_version_ >= (3,0):
+    import urllib.request as py_sys_urllib # partially supersedes Python 2's urllib2
+    from urllib.error import HTTPError, URLError
+else:
+    import urllib2 as py_sys_urllib
+    from urllib2 import HTTPError, URLError
 
 from xml.dom.minidom import parseString
-import ssl
-
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
-    pass
-else:
-    # Handle target environment that doesn't support HTTPS verification
-    ssl._create_default_https_context = _create_unverified_https_context
+from xml.sax.saxutils import escape
 
 DEBUG = 0
 
-class glsapiutil2:
+class glsapiutil3:
+   
+    # constructor, takes in a debug value as optional argument
+    # if debug is specified then a logger is set up
 
-    ## Housekeeping methods
+    def __init__ ( self, debug = 0 ):
+        global DEBUG
+        DEBUG = debug
 
-    def __init__( self ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        self.hostname = ""
-        self.auth_handler = None
-        self.version = "v2"
-        self.uri = ""
-        self.base_uri = ""
+        # set up the logger
+        if DEBUG > 0:
+            root = logging.getLogger() # return the root logger
+            root.setLevel( logging.DEBUG )
+            
+            ch = logging.StreamHandler( sys.stderr ) # write to stderr by default
+            ch.setLevel( logging.DEBUG )
+            
+            logfmtr = logging.Formatter('{0} %(levelname)-2s: %(asctime)s @> %(message)s'.format(self.__module__))
+            ch.setFormatter( logfmtr )
 
+            root.addHandler( ch )
+
+        logging.debug( '%s called' % ( sys._getframe().f_code.co_name ) )
+
+        # some internal variables we will need
+        self.hostname = ''
+        self.auth_handler = ''
+        self.version = 'v2'
+        self._base_uri = []
+
+    # sets the hostname
+    # if a sourceURI is provided in setup()
+    # the hostname will be overwritten by what is set here
     def setHostname( self, hostname ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
+
+        logging.debug( 'Setting hostname to "%s"' % (hostname) )
         self.hostname = hostname
 
+    # set the API version
+    # this function will not usually need to be called
+    # unless we are explicitly setting the version to something
+    # other than the default 'v2'
     def setVersion( self, version ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
+        
+        logging.debug( 'Setting API version to "%s"' % (version) )
         self.version = version
 
-    def setURI( self, uri ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        self.uri = uri
-
+    # get the base URI
+    # always call this function instead of accessing
+    # self._base_uri directly, as this function will give
+    # you a nice string instead of tokens
     def getBaseURI( self ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        return self.base_uri
+        base_uri = '/'.join( self._base_uri )
+        base_uri = '{0}/'.format( base_uri )
+        
+        logging.warn( 'Current Base URI is "%s". If you have called setVersion() or setHostname() after calling setup(), please call setup() again' % ( base_uri ) )
 
-    def setup( self, user, password ):
+        return base_uri
+    
+    # set up the API connection with a username and password
+    # if a step URI or some other source URI is provided
+    # the function will introspect and use the hostname
+    # and version from it, overwriting any previous values
+    # that are set by setHostname() or setVersion()
+    def setup( self, username, password, sourceURI = '' ):
 
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
+        logging.debug( 'Setting API credentials' )
 
-        if len(self.uri) > 0:
-            tokens = self.uri.split( "/" )
-            self.hostname = "/".join(tokens[0:3])
+        if len(sourceURI) > 0: # if we are given a source URI to work with, let's set up with those
+            tokens = sourceURI.split('/')
+            self.hostname = '/'.join( tokens[0:3] )
             self.version = tokens[4]
-            self.base_uri = "/".join(tokens[0:5]) + "/"
+            
+            logging.debug('You have specified a URI from which I will figure out the hostname. Thanks!')
+
+        if len( self.hostname ) <= 0:
+            logging.error( 'Hostname not specified! Please call setHostname() first or specify a sourceURI to setup()' )
+            raise ValueError( 'Hostname not specified.' )
+
+        # set the base URI that we will use forever more
+        # doing it this way means we can change the hostname or version
+        # after calling setup(). The caveat is that setup() needs to be called again
+        self._base_uri = [ self.hostname, 'api', self.version ]
+
+        logging.debug( 'Setting base URI to "%s". If this looks different from your normal hostname, don\'t panic!' % ( self.getBaseURI() ) )
+
+        # set up the API authentication and plumbing
+        # using the current Base URI
+        password_manager = py_sys_urllib.HTTPPasswordMgrWithDefaultRealm()
+        password_manager.add_password( None, self.getBaseURI(), username, password )
+        self.auth_handler = py_sys_urllib.HTTPBasicAuthHandler( password_manager )
+        opener = py_sys_urllib.build_opener( self.auth_handler )
+        py_sys_urllib.install_opener( opener )
+    
+        logging.debug( 'API object created successfully.' )
+
+
+    ## FUNCTIONS TO ACCESS REST ENDPOINTS
+
+    def GET( self, uri ):
+        
+        # default HTTP Request is a GET
+        return self._createStandardHTTPRequest( uri )
+
+    # POST wrapper function
+    def POST( self, xmlObject, uri ):
+
+        return self._createStandardHTTPRequest( uri, 'POST', xmlObject )
+    
+    # PUT wrapper function
+    def PUT( self, xmlObject, uri ):
+
+        return self._createStandardHTTPRequest( uri, 'PUT', xmlObject )
+
+    # DELETE wrapper function
+    def DELETE( self, xmlObject, uri ):
+
+        return self._createStandardHTTPRequest( uri, 'DELETE', xmlObject )
+
+
+
+    ## Useful helper functions
+    def reportScriptStatus( self, uri, status, message ):
+
+        newuri = uri + "/programstatus"
+        message = escape( message )
+
+        thisXML = self.GET( newuri )
+        thisDOM = parseString( thisXML )
+
+        sNodes = thisDOM.getElementsByTagName( "status" )
+        
+        if len( sNodes ) > 0:
+            sNodes[0].firstChild.data = status
+        
+        mNodes = thisDOM.getElementsByTagName( "message" )
+        
+        if len( mNodes ) > 0:
+            mNodes[0].firstChild.data = message
+        
+        elif len( mNodes ) == 0:
+            newDOM = xml.dom.minidom.getDOMImplementation()
+            newDoc = newDOM.createDocument( None, None, None )
+
+            # now add the new message node
+            txt = newDoc.createTextNode( str( message ) ) 
+            newNode = newDoc.createElement( "message" )
+            newNode.appendChild( txt )
+
+            thisDOM.childNodes[0].appendChild( newNode )
+
+        try:
+            self.PUT( thisDOM.toxml(), newuri )
+        
+        except:
+            logging.error( message )  
+    
+    def getArtifacts( self, LUIDs ):
+
+        """ 
+        This function will be passed a list of artifacts LUIDS, and return those artifacts represented as XML
+        The artifacts will be collected in a single batch transaction, and the function will return the XML
+        for the entire transactional list
+        """
+
+        response = self.__getBatchObjects( LUIDs, "artifact" )
+        if response is None:
+            return ""
         else:
-            self.base_uri = self.hostname + '/api/' + self.version
+            return response
 
-        ## setup up API plumbing
-        password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        password_manager.add_password( None, self.base_uri, user, password )
-        self.auth_handler = urllib.request.HTTPBasicAuthHandler( password_manager )
-        opener = urllib.request.build_opener( self.auth_handler )
-        urllib.request.install_opener( opener )
+    def getSamples( self, LUIDs ):
 
-    ## REST Methods
+        """ 
+        This function will be passed a list of sample LUIDS, and return those samples represented as XML
+        The samples will be collected in a single batch transaction, and the function will return the XML
+        for the entire transactional list
+        """
 
-    def GET( self, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        responseText = ""
-        thisXML = ""
-
-        try:
-            thisXML = urllib.request.urlopen( url ).read()
-        except urllib.error.HTTPError as e:
-            responseText = e.msg
-        except urllib.error.URLError as e:
-            if e.strerror is not None:
-                responseText = e.strerror
-            elif e.reason is not None:
-                responseText = str( e.reason )
-            else:
-                responseText = e.message
-        except:
-            responseText = str(sys.exc_info()[0]) + str(sys.exc_info()[1])
-
-        if len(responseText) > 0:
-            print(( "Error trying to access " + url ))
-            print( responseText )
-
-        return thisXML
-
-    def PUT( self, xmlObject, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        opener = urllib.request.build_opener(self.auth_handler)
-
-        req = urllib.request.Request(url)
-        req.add_data( xmlObject )
-        req.get_method = lambda: 'PUT'
-        req.add_header('Accept', 'application/xml')
-        req.add_header('Content-Type', 'application/xml')
-        req.add_header('User-Agent', 'Python-urllib2/2.6')
-
-        try:
-            response = opener.open( req )
-            responseText = response.read()
-        except urllib.error.HTTPError as e:
-            responseText = e.read()
-        except:
-            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
-
-        return responseText
-
-    def POST( self, xmlObject, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        opener = urllib.request.build_opener(self.auth_handler)
-
-        req = urllib.request.Request(url)
-        req.add_data( xmlObject )
-        req.get_method = lambda: 'POST'
-        req.add_header('Accept', 'application/xml')
-        req.add_header('Content-Type', 'application/xml')
-        req.add_header('User-Agent', 'Python-urllib2/2.6')
-
-        try:
-            response = opener.open( req )
-            responseText = response.read()
-        except urllib.error.HTTPError as e:
-            responseText = e.read()
-        except:
-            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
-
-        return responseText
-
-    ## API Helper methods
+        response = self.__getBatchObjects( LUIDs, "sample" )
+        if response is None:
+            return ""
+        else:
+            return response
 
     @staticmethod
     def getUDF( DOM, udfname ):
@@ -156,101 +227,59 @@ class glsapiutil2:
 
         return response
 
-    @staticmethod
-    def setUDF( DOM, udfname, udfvalue ):
 
-        if DEBUG > 2: print(( DOM.toprettyxml() ))
+    ## internal functions
+    
+    # create a HTTP request for POSTs and PUTs
+    # with the standard API and sends the message.
+    # returns the message received from the server
+    def _createStandardHTTPRequest( self, uri, http_method_type = 'GET', xmlObject = None ):
 
-        ## are we dealing with batch, or non-batch DOMs?
-        if DOM.parentNode is None:
-            isBatch = False
-        else:
-            isBatch = True
+        logging.debug( 'Creating a request of type %s' % (http_method_type, ) )
+        
+        opener = py_sys_urllib.build_opener( self.auth_handler )
 
-        newDOM = xml.dom.minidom.getDOMImplementation()
-        newDoc = newDOM.createDocument( None, None, None )
+        req = py_sys_urllib.Request( uri )
 
-        ## if the node already exists, delete it
-        elements = DOM.getElementsByTagName( "udf:field" )
-        for element in elements:
-            if element.getAttribute( "name" ) == udfname:
-                try:
-                    if isBatch:
-                        DOM.removeChild( element )
-                    else:
-                        DOM.childNodes[0].removeChild( element )
-                except xml.dom.NotFoundErr as e:
-                    if DEBUG > 0: print( "Unable to Remove existing UDF node" )
+        if xmlObject is not None:
+            f = open('testfile', 'wa')
+            f.write(xmlObject+'\n\n')
+            f.close()
+            print('xmlObject:',xmlObject)
+            req.data = xmlObject
+            #req.add_data( xmlObject )
+        
+        req.get_method = lambda: http_method_type
+        req.add_header( 'Accept', 'application/xml' )
+        req.add_header( 'Content-Type', 'application/xml' )
+        req.add_header( 'User-Agent', 'Python-urllib-glsapiutil/3.5' ) # custom user agent
 
-                break
-
-        # now add the new UDF node
-        txt = newDoc.createTextNode( str( udfvalue ) )
-        newNode = newDoc.createElement( "udf:field" )
-        newNode.setAttribute( "name", udfname )
-        newNode.appendChild( txt )
-
-        if isBatch:
-            DOM.appendChild( newNode )
-        else:
-            DOM.childNodes[0].appendChild( newNode )
-
-        return DOM
-
-    def reportScriptStatus( self, uri, status, message ):
-
-        newuri = uri + "/programstatus"
-
-        XML = self.GET( newuri )
-        newXML = re.sub( '(.*<status>)(.*)(<\/status>.*)', '\\1' + status + '\\3', XML )
-        newXML = re.sub( '(.*<\/status>)(.*)', '\\1' + '<message>' + message + '</message>' + '\\2', newXML )
+        responseText = ''
 
         try:
-            self.PUT( newXML, newuri )
+
+            response = opener.open( req )
+            responseText = response.read()
+
+        except HTTPError as e:
+            responseText = e.read()
+
+        except URLError as e:
+            if e.strerror is not None:
+                responseText = e.strerror
+
+            elif e.reason is not None:
+                responseText = e.reason
+            else:
+                responseText = e.message
+
+
         except:
-            print(message)
+   #         responseText = '%s %s' % ( str(sys.exc_type), str(sys.exc_value) )
+            responseText = 'hej problem med createStandardHTTPRequest'
 
-    def getArtifacts( self, LUIDs ):
+        return responseText
 
-        """
-        This function will be passed a list of artifacts LUIDS, and return those artifacts represented as XML
-        The artifacts will be collected in a single batch transaction, and the function will return the XML
-        for the entire transactional list
-        """
-
-        response = self.__getBatchObjects( LUIDs, "artifact" )
-        if response is None:
-            return ""
-        else:
-            return response
-
-    def getContainers( self, LUIDs ):
-
-        """
-        This function will be passed a list of container LUIDS, and return those containers represented as XML
-        The containers will be collected in a single batch transaction, and the function will return the XML
-        for the entire transactional list
-        """
-
-        response = self.__getBatchObjects( LUIDs, "container" )
-        if response is None:
-            return ""
-        else:
-            return response
-
-    def getSamples( self, LUIDs ):
-
-        """
-        This function will be passed a list of sample LUIDS, and return those sample represented as XML
-        The samples will be collected in a single batch transaction, and the function will return the XML
-        for the entire transactional list
-        """
-
-        response = self.__getBatchObjects( LUIDs, "sample" )
-        if response is None:
-            return ""
-        else:
-            return response
 
     def __getBatchObjects( self, LUIDs, objectType ):
 
@@ -263,12 +292,15 @@ class glsapiutil2:
         elif objectType == "container":
             batchNoun = "containers"
             nodeNoun = "con:container"
+        elif objectType == "file":
+            batchNoun = "files"
+            nodeNoun = "file:file"
         else:
             return None
 
         lXML = []
         lXML.append( '<ri:links xmlns:ri="http://genologics.com/ri">' )
-        for limsid in LUIDs:
+        for limsid in set(LUIDs):
             lXML.append( '<link uri="%s%s/%s"/>' % ( self.getBaseURI(), batchNoun, limsid ) )
         lXML.append( '</ri:links>' )
         lXML = ''.join( lXML )
@@ -287,453 +319,3 @@ class glsapiutil2:
             response = ""
 
         return response
-
-class glsapiutil:
-
-    ## Housekeeping methods
-
-    def __init__( self ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        self.hostname = ""
-        self.auth_handler = ""
-        self.version = "v1"
-
-    def setHostname( self, hostname ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        self.hostname = hostname
-
-    def setVersion( self, version ):
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-        self.version = version
-
-    def setup( self, user, password ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        ## setup up API plumbing
-        password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        password_manager.add_password( None, self.hostname + '/api/' + self.version, user, password )
-        self.auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)
-        opener = urllib.request.build_opener(self.auth_handler)
-        urllib.request.install_opener(opener)
-
-    ## REST methods
-
-    def createObject( self, xmlObject, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        opener = urllib.request.build_opener(self.auth_handler)
-
-        req = urllib.request.Request(url)
-        req.add_data( xmlObject )
-        req.get_method = lambda: 'POST'
-        req.add_header('Accept', 'application/xml')
-        req.add_header('Content-Type', 'application/xml')
-        req.add_header('User-Agent', 'Python-urllib2/2.6')
-
-        try:
-            response = opener.open( req )
-            responseText = response.read()
-        except urllib.error.HTTPError as e:
-            responseText = e.read()
-        except:
-            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
-
-        return responseText
-
-    def updateObject( self, xmlObject, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        opener = urllib.request.build_opener(self.auth_handler)
-
-        req = urllib.request.Request(url)
-        req.add_data( xmlObject )
-        req.get_method = lambda: 'PUT'
-        req.add_header('Accept', 'application/xml')
-        req.add_header('Content-Type', 'application/xml')
-        req.add_header('User-Agent', 'Python-urllib2/2.6')
-
-        try:
-            response = opener.open( req )
-            responseText = response.read()
-        except urllib.error.HTTPError as e:
-            responseText = e.read()
-        except:
-            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
-
-        return responseText
-
-    def getResourceByURI( self, url ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        responseText = ""
-        xml = ""
-
-        try:
-            xml = urllib.request.urlopen( url ).read()
-        except urllib.error.HTTPError as e:
-            responseText = e.msg
-        except urllib.error.URLError as e:
-            if e.strerror is not None:
-                responseText = e.strerror
-            elif e.reason is not None:
-                responseText = str( e.reason )
-            else:
-                responseText = e.message
-        except:
-            responseText = str(sys.exc_info()[0]) + str(sys.exc_info()[1])
-
-        if len(responseText) > 0:
-            print(( "Error trying to access " + url ))
-            print( responseText )
-
-        return xml
-
-    def getBatchResourceByURI( self, url, links ):
-
-        if DEBUG > 0: print(( "%s:%s called" % ( self.__module__, sys._getframe().f_code.co_name ) ))
-
-        opener = urllib.request.build_opener(self.auth_handler)
-
-        req = urllib.request.Request(url)
-        req.add_data( links )
-        req.get_method = lambda: 'POST'
-        req.add_header('Accept', 'application/xml')
-        req.add_header('Content-Type', 'application/xml')
-        req.add_header('User-Agent', 'Python-urllib2/2.6')
-
-        try:
-            response = opener.open( req )
-            responseText = response.read()
-        except urllib.error.HTTPError as e:
-            responseText = e.read()
-        except:
-            responseText = str(sys.exc_info()[0]) + " " + str(sys.exc_info()[1])
-
-        return responseText
-
-    ## Helper methods
-
-    @staticmethod
-    def getUDF( DOM, udfname ):
-
-        response = ""
-
-        elements = DOM.getElementsByTagName( "udf:field" )
-        for udf in elements:
-            temp = udf.getAttribute( "name" )
-            if temp == udfname:
-                response = udf.firstChild.data
-                break
-
-        return response
-
-    @staticmethod
-    def setUDF( DOM, udfname, udfvalue ):
-
-        if DEBUG > 2: print(( DOM.toprettyxml() ))
-
-        ## are we dealing with batch, or non-batch DOMs?
-        if DOM.parentNode is None:
-            isBatch = False
-        else:
-            isBatch = True
-
-        newDOM = xml.dom.minidom.getDOMImplementation()
-        newDoc = newDOM.createDocument( None, None, None )
-
-        ## if the node already exists, delete it
-        elements = DOM.getElementsByTagName( "udf:field" )
-        for element in elements:
-            if element.getAttribute( "name" ) == udfname:
-                try:
-                    if isBatch:
-                        DOM.removeChild( element )
-                    else:
-                        DOM.childNodes[0].removeChild( element )
-                except xml.dom.NotFoundErr as e:
-                    if DEBUG > 0: print( "Unable to Remove existing UDF node" )
-
-                break
-
-        # now add the new UDF node
-        txt = newDoc.createTextNode( str( udfvalue ) )
-        newNode = newDoc.createElement( "udf:field" )
-        newNode.setAttribute( "name", udfname )
-        newNode.appendChild( txt )
-
-        if isBatch:
-            DOM.appendChild( newNode )
-        else:
-            DOM.childNodes[0].appendChild( newNode )
-
-        return DOM
-
-    def getParentProcessURIs( self, pURI ):
-
-        response = []
-
-        pXML = self.getResourceByURI( pURI )
-        pDOM = parseString( pXML )
-        elements = pDOM.getElementsByTagName( "input" )
-        for element in elements:
-            ppNode = element.getElementsByTagName( "parent-process" )
-            ppURI = ppNode[0].getAttribute( "uri" )
-
-            if ppURI not in response:
-                response.append( ppURI )
-
-        return response
-
-    def getDaughterProcessURIs( self, pURI ):
-
-        response = []
-        outputs = []
-
-        pXML = self.getResourceByURI( pURI )
-        pDOM = parseString( pXML )
-        elements = pDOM.getElementsByTagName( "output" )
-        for element in elements:
-            limsid = element.getAttribute( "limsid" )
-            if limsid not in outputs:
-                outputs.append( limsid )
-
-        ## now get the processes run on each output limsid
-        for limsid in outputs:
-            uri = self.hostname + "/api/" + self.version + "/processes?inputartifactlimsid=" + limsid
-            pXML = self.getResourceByURI( uri )
-            pDOM = parseString( pXML )
-            elements = pDOM.getElementsByTagName( "process" )
-            for element in elements:
-                dURI = element.getAttribute( "uri" )
-                if dURI not in response:
-                    response.append( dURI )
-
-        return response
-
-    def reportScriptStatus( self, uri, status, message ):
-
-        newuri = uri + "/programstatus"
-
-        XML = self.getResourceByURI( newuri )
-        newXML = re.sub( '(.*<status>)(.*)(<\/status>.*)', '\\1' + status + '\\3', XML )
-        newXML = re.sub( '(.*<\/status>)(.*)', '\\1' + '<message>' + message + '</message>' + '\\2', newXML )
-
-        try:
-            self.updateObject( newXML, newuri )
-        except:
-            print(message)
-
-    @staticmethod
-    def removeState( xml ):
-
-        return re.sub( "(.*)(\?state=[0-9]*)(.*)", "\\1" + "\\3", xml )
-
-    @staticmethod
-    def getInnerXml( xml, tag ):
-        tagname = '<' + tag + '.*?>'
-        inXml = re.sub( tagname, '', xml )
-
-        tagname = '</' + tag + '>'
-        inXml = inXml.replace( tagname, '' )
-
-        return inXml
-
-################################################
-## THESE CLASSES RELY UPON THE glsapiutil2 CLASS
-################################################
-
-class stepOutput:
-
-    def __init__(self):
-        self.__inputLUID = ""
-        self.__LUID = ""
-        self.__type = ""
-        self.__isShared = False
-        self.__props = {}
-        pass
-
-    def setInputLUID(self, value): self.__inputLUID = value
-    def getInputLUID(self): return self.__inputLUID
-
-    def setOutputLUID(self, value): self.__LUID = value
-    def getOutputLUID(self): return self.__LUID
-
-    def setOutputType(self, value): self.__type = value
-    def getOutputType(self): return self.__type
-
-    def setIsShared(self, value): self.__isShared = value
-    def getIsShared(self): return self.__isShared
-
-    def setProperty(self, propName, propValue): self.__props[ propName ] = propValue
-    def getProperty(self, propName):
-        if propName in list(self.__props.keys()):
-            return self.__props[ propName ]
-        else:
-            return ""
-
-    def toString(self):
-        txt = "Input:" + self.__inputLUID
-        txt += " Output:" + self.__LUID
-        txt += " Type:" + self.__type
-        txt += " Shared:" + str(self.__isShared)
-
-        for k in list(self.__props.keys()):
-            txt += " " + k + ":" + str(self.__props[ k ])
-
-        return txt
-
-class IOMapper:
-
-    def __init__( self ):
-        self.__stepURI = ""
-        self.__IOMaps = []
-        self.__detailsDOM = None
-        self.__APIHandler = None
-
-    def setStepURI( self, value ): self.__stepURI = value
-    def setAPIHandler(self, object ): self.__APIHandler = object
-
-    def getIOMaps( self, outputType="", shared=False ):
-        if len(self.__stepURI) > 0:
-            ## do we already have a populated DOM? If not, fetch the XML we require
-            if self.__detailsDOM is None:
-                detailsURI = self.__stepURI + "/details"
-                detailsXML = self.__APIHandler.GET( detailsURI )
-                self.__detailsDOM = parseString( detailsXML )
-
-                IOMaps = self.__detailsDOM.getElementsByTagName( "input-output-map" )
-                for IOMap in IOMaps:
-                    tmp = stepOutput()
-                    nodes = IOMap.getElementsByTagName( "input" )
-                    iLUID = nodes[0].getAttribute( "limsid" )
-                    tmp.setInputLUID( iLUID )
-                    nodes = IOMap.getElementsByTagName( "output" )
-                    ## does the step even produce outputs? Maybe not
-                    if len(nodes) > 0:
-                        tmp.setOutputLUID( nodes[0].getAttribute( "limsid" ) )
-                        tmp.setOutputType( nodes[0].getAttribute( "type" ) )
-                        ## set the output-generation-type
-                        ogType = nodes[0].getAttribute( "output-generation-type" )
-                        if ogType == "PerInput":
-                            tmp.setIsShared( False )
-                        else:
-                            tmp.setIsShared( True )
-
-                    ## do we want this as part of our collection?
-                    if shared is True:
-                        if len(outputType) == 0:
-                            self.__IOMaps.append( tmp )
-                        elif outputType == tmp.getOutputType():
-                            self.__IOMaps.append( tmp )
-                    elif shared is False and tmp.getIsShared() is False:
-                        if len(outputType) == 0:
-                            self.__IOMaps.append( tmp )
-                        elif outputType == tmp.getOutputType():
-                            self.__IOMaps.append( tmp )
-
-        return self.__IOMaps
-
-class stepHelper:
-
-    def __init__( self ):
-        self.__stepURI = ""
-        self.IOMaps = None
-        self.__APIHandler = None
-        self.__placementsDOM = None
-        self.__processDOM = None
-        self.__poolingDOM = None
-        self.__reagentsDOM = None
-        pass
-
-    def setStepURI( self, value ): self.__stepURI = value
-    def setAPIHandler(self, object ): self.__APIHandler = object
-
-    def getIOMaps( self, outputType="", shared=False ):
-        if self.IOMaps is None:
-            self.IOMaps = IOMapper()
-            self.IOMaps.setStepURI( self.__stepURI )
-            self.IOMaps.setAPIHandler( self.__APIHandler )
-        IOMaps = self.IOMaps.getIOMaps( outputType, shared )
-
-        return IOMaps
-
-    def getUniqueInputLUIDs( self, shared=False ):
-        iLUIDS = []
-        for IOMap in self.getIOMaps( shared=shared ):
-            iLUID = IOMap.getInputLUID()
-            if iLUID not in iLUIDS:
-                iLUIDS.append( iLUID )
-        return iLUIDS
-
-    def getSelectedContainers( self ):
-
-        scLUIDs = []
-
-        if len(self.__stepURI) > 0 and self.__placementsDOM is None:
-            placementsURI = self.__stepURI + "/placements"
-            placementsXML = self.__APIHandler.GET( placementsURI )
-            self.__placementsDOM = parseString( placementsXML )
-
-        nodes = self.__placementsDOM.getElementsByTagName( "selected-containers" )
-        scNodes = nodes[0].getElementsByTagName( "container")
-        for sc in scNodes:
-            scURI = sc.getAttribute( "uri")
-            scLUID = scURI.split( "/" )[-1:]
-
-            scLUIDs.append( scLUID )
-
-        return scLUIDs
-
-    def getProcessDOM( self ):
-
-        if self.__processDOM is None:
-            pURI = self.__stepURI.replace( "steps", "processes" )
-            detailsXML = self.__APIHandler.GET( pURI )
-            self.__processDOM = parseString( detailsXML )
-
-        return self.__processDOM
-
-    def getPoolingDOM( self ):
-
-        if self.__poolingDOM is None:
-            pURI = self.__stepURI + "/pools"
-            pXML = self.__APIHandler.GET( pURI )
-            self.__poolingDOM = parseString( pXML )
-
-        return self.__poolingDOM
-
-    def getPlacementsDOM( self ):
-
-        if len(self.__stepURI) > 0 and self.__placementsDOM is None:
-            placementsURI = self.__stepURI + "/placements"
-            placementsXML = self.__APIHandler.GET( placementsURI )
-            self.__placementsDOM = parseString( placementsXML )
-
-        return self.__placementsDOM
-
-    def getReagentsDOM( self ):
-
-        if len(self.__stepURI) > 0 and self.__reagentsDOM is None:
-            thisURI = self.__stepURI + "/reagents"
-            thisXML = self.__APIHandler.GET( thisURI )
-            self.__placementsDOM = parseString( thisXML )
-
-        return self.__placementsDOM
-
-    def getStepConfiguration( self ):
-
-        response = ""
-
-        if len( self.__stepURI ) > 0:
-            stepXML = self.__APIHandler.GET( self.__stepURI )
-            stepDOM = parseString( stepXML )
-            nodes = stepDOM.getElementsByTagName( "configuration" )
-            if len(nodes) > 0:
-                response = nodes[0].toxml()
-
-        return response
-
