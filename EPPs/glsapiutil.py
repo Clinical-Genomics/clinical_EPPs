@@ -242,7 +242,7 @@ class glsapiutil3:
         req = py_sys_urllib.Request( uri )
 
         if xmlObject is not None:
-            f = open('testfile', 'wa')
+            f = open('/home/glsai/opt/testfile', 'a')
             f.write(xmlObject+'\n\n')
             f.close()
             print('xmlObject:',xmlObject)
