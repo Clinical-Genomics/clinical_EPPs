@@ -10,9 +10,6 @@ import sys
 import click
 
 
-DESC = """Script for queuing artifacts."""
-
-
 def get_artifacts(process, inputs):
     """If inputs is true, return all input analytes of the process,
     otherwise return all output analytes of the process"""
@@ -64,6 +61,9 @@ option_process = click.option(
     help="Use this flag if you run the script from a QC step.",
 )
 def main(process, workflow, stage, udf, inputs):
+    """Queueing artifacts with given udf==True, to stage in workflow.
+    Raising error if quiueing fails."""
+    
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, inputs)
