@@ -76,10 +76,13 @@ def routeAnalytes( stageURI, input_art , udf):
 
     # Sends seperate routing messages for each stage
     r = pack_and_send( stageURI, artifacts_to_route )
-    if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
-        msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
-    else:
-        msg = r
+    try:
+        if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
+            msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
+        else:
+            msg = r
+    except:
+        pass
 
 
 def setupArguments():

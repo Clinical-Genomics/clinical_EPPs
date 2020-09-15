@@ -134,6 +134,7 @@ class glsapiutil3:
 
     # POST wrapper function
     def POST( self, xmlObject, uri ):
+        print('POST')
 
         return self._createStandardHTTPRequest( uri, 'POST', xmlObject )
     
@@ -239,16 +240,11 @@ class glsapiutil3:
         
         opener = py_sys_urllib.build_opener( self.auth_handler )
 
-        req = py_sys_urllib.Request( uri )
+        if xmlObject:
+            req = py_sys_urllib.Request( uri , data=xmlObject)
+        else:
+            req = py_sys_urllib.Request( uri)
 
-        if xmlObject is not None:
-            f = open('/home/glsai/opt/testfile', 'a')
-            f.write(xmlObject+'\n\n')
-            f.close()
-            print('xmlObject:',xmlObject)
-            req.data = xmlObject
-            #req.add_data( xmlObject )
-        
         req.get_method = lambda: http_method_type
         req.add_header( 'Accept', 'application/xml' )
         req.add_header( 'Content-Type', 'application/xml' )
@@ -260,7 +256,7 @@ class glsapiutil3:
 
             response = opener.open( req )
             responseText = response.read()
-
+            print('okej')
         except HTTPError as e:
             responseText = e.read()
 
@@ -275,9 +271,10 @@ class glsapiutil3:
 
 
         except:
-   #         responseText = '%s %s' % ( str(sys.exc_type), str(sys.exc_value) )
-            responseText = 'hej problem med createStandardHTTPRequest'
-
+            print('inte okej')
+            responseText = 'ajaj'
+            #responseText = '%s %s' % ( str(sys.exc_type), str(sys.exc_value) )
+        print('respons:',responseText)
         return responseText
 
 
