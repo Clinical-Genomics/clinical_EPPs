@@ -1,117 +1,64 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from argparse import ArgumentParser
+from clinical_EPPs.exceptions import QueueArtifactsError
 
-from optparse import OptionParser
-import glsapiutil
-from xml.dom.minidom import parseString
+from genologics.lims import Lims
+from genologics.config import BASEURI,USERNAME,PASSWORD
+from genologics.entities import Process
 import sys
-DEBUG = False
+
+DESC = """Script for queuing artifacts."""
 
 
-def getStageURI( wfName, stageName ):
 
-    response = ""
+def get_artifacts(process, input_analyte):
+    """"""
 
-    wURI = api.getBaseURI() + "configuration/workflows"
-    wXML = api.GET( wURI )
-    wDOM = parseString( wXML )
-
-    workflows = wDOM.getElementsByTagName( "workflow" )
-    for wf in workflows:
-        name = wf.getAttribute( "name" )
-        if name == wfName:
-            wfURI = wf.getAttribute( "uri" )
-            wfXML = api.GET( wfURI )
-            wfDOM = parseString( wfXML )
-            stages = wfDOM.getElementsByTagName( "stage" )
-            for stage in stages:
-                stagename = stage.getAttribute( "name" )
-                if stagename == stageName:
-                    response = stage.getAttribute( "uri" )
-                    break
-            break
-    return response
-
-def routeAnalytes( stageURI, input_art , udf):
-
-    ANALYTES = []		### Cache, prevents unnessesary GET calls
-
-    artifacts_to_route = []
-
-    ## Step 1: Get the step XML
-    processURI = args.stepURI + "/details"
-    processXML = api.GET( processURI )
-    processDOM = parseString( processXML )
-
-    ## Step 2: Cache Output Analytes
-    if input_art:
-        analytes = processDOM.getElementsByTagName( "input" )
+    if input_analyte:
+        artifacts = process.all_inputs(unique=True)
     else:
-        analytes = processDOM.getElementsByTagName( "output" )
-    for analyte in analytes:
-        if input_art or analyte.getAttribute( "type" ) == "Analyte":
-            analyteURI = analyte.getAttribute( "uri" )
-            if analyteURI in ANALYTES:
-                pass
-            else:
-                ANALYTES.append( analyteURI )
-                analyteXML = api.GET( analyteURI )
-                analyteDOM = parseString( analyteXML )
-
-                ## Step 3: Add the analytes to the list of ones to be routed
-                if api.getUDF( analyteDOM , udf ) == 'true':
-                    artifacts_to_route.append( analyteURI )
+        artifacts = [a for a in process.all_outputs(unique=True) if a.type=='Analyte']
+    return artifacts
 
 
-    def pack_and_send( stageURI, a_ToGo ):
-        ## Step 4: Build and submit the routing message
-        rXML = '<rt:routing xmlns:rt="http://genologics.com/ri/routing">'
-        rXML = rXML + '<assign stage-uri="' + stageURI + '">'
-        for uri in a_ToGo:
-            rXML = rXML + '<artifact uri="' + uri + '"/>'
-        rXML = rXML + '</assign>'
-        rXML = rXML + '</rt:routing>'
-        response = api.POST( rXML, api.getBaseURI() + "route/artifacts/" )
-        return response
+def queue_artifacts(artifacts, workflow_id, stage_id):
+    """"""
 
-    # Sends seperate routing messages for each stage
-    r = pack_and_send( stageURI, artifacts_to_route )
-    if len( parseString( r ).getElementsByTagName( "rt:routing" ) ) > 0:
-        msg = str( len(artifacts_to_route) ) + " samples were added to the " + stageURI + " step. "
-    else:
-        msg = r
-    print msg
+    stage_uri = f'{BASEURI}/api/v2/configuration/workflows/{workflow_id}/stages/{stage_id}'
 
+    try:
+        lims.route_artifacts(artifacts, stage_uri=stage_uri)
+    except:
+        raise QueueArtifactsError('Failed to queue artifacts.')
+         
+  
+def main(lims, args):
+    process = Process(lims, id = args.process)
+    artifacts = get_artifacts(process, args.input_analyte)
 
-def setupArguments():
-
-    Parser = OptionParser()
-    Parser.add_option('-u', "--username", action='store', dest='username')
-    Parser.add_option('-p', "--password", action='store', dest='password')
-    Parser.add_option('-s', "--stepURI", action='store', dest='stepURI')
-    Parser.add_option("--workflow", action='store', dest='workflow')
-    Parser.add_option("--stage", action='store', dest='stage')
-    Parser.add_option("--udf", action='store', dest='udf')
-    Parser.add_option("-i", action='store_true', dest='input',
-                        help=("Use this tag if you run the script from a QC step."))
-
-    return Parser.parse_args()[0]
-
-def main():
-
-    global args
-    args = setupArguments()
-
-    global api
-    api = glsapiutil.glsapiutil2()
-    api.setURI( args.stepURI )
-    api.setup( args.username, args.password )
-
-    stageURI = getStageURI(args.workflow, args.stage)
-    if not stageURI:
-        sys.exit( "Could not retrieve the workflow / stage combination")
-
-    routeAnalytes( stageURI , args.input, args.udf)
+    try:
+        queue_artifacts(artifacts, args.workflow, args.stage)
+    except NIPToolError as e:
+        sys.exit(e.message)
+        #raise click.Abort()
 
 if __name__ == "__main__":
-    main()
+    ## change to click
+    parser = ArgumentParser(description=DESC)
+    parser.add_argument('-p', dest='process', 
+                        help='Lims id for current Process')
+    parser.add_argument('-w', dest='workflow',
+                        help='Destination workflow id.')
+    parser.add_argument('-s', dest='stage',
+                        help='Destination stage id.')
+    parser.add_argument('-u', dest='udf',
+                        help='UDF that will tell wich artifacts to move.')
+    parser.add_argument('-i', dest='input_analyte', action='store_true',
+                        help='Use this tag if you run the script from a QC step.')
+    
+    args = parser.parse_args()
+    lims = Lims(BASEURI, USERNAME, PASSWORD)
+    main(lims, args)
+
+
