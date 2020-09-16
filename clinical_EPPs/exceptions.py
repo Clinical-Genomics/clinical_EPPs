@@ -6,4 +6,8 @@ class Clinical_EPPsError(Exception):
 class QueueArtifactsError(Clinical_EPPsError):
     pass
 
+class DuplicateSampleError(Clinical_EPPsError):
+    pass
+
+
 
