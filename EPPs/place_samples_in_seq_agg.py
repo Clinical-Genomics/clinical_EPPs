@@ -7,7 +7,7 @@ from clinical_EPPs.utils import (
     queue_artifacts,
     get_latest_artifact,
     get_process_samples,
-    get_sample_artifact
+    get_sample_artifact,
 )
 from clinical_EPPs.options import *
 from genologics.lims import Lims
@@ -18,16 +18,19 @@ import sys
 import click
 
 
+def get_artifacts(lims: Lims, process_type: list, samples: list)-> list:
+    """Get samples and pools to place in sequence aggregation. 
+    Sort of specific script:
+    Single arts                                       --> Next Step
+    Cust001 - Pools --> split to pools from sort step --> Next Step
+    Non RML - Pools --> split in uniq sample arts     --> Next Step
 
-def get_pool_from_sort(lims, process_types, sample):
-    all_arts_in_sort = lims.get_artifacts(
-        samplelimsid=sample.id, process_type=process_types, type="Analyte"
-    )
-    pool = get_latest_artifact(all_arts_in_sort)
-    return pool
+    Args:
+        lims: Lims
+        rerun_arts: List # Artifacts with Rerun flag
+        process_type: List[str] # Name of step(s) before the requeue step
+    """
 
-
-def get_artifacts(lims, process_types, samples):
     missing_cust = []
     send_to_next_step = []
     for sample in samples:
@@ -37,7 +40,7 @@ def get_artifacts(lims, process_types, samples):
             continue
         elif cust == "cust001":
             ## this is a RML - get pools from sort step
-            artifact = get_pool_from_sort(lims, process_types, sample)
+            artifact = get_latest_artifact(lims, sample.id, "Analyte", process_type)
         else:
             ## this is a pool (or a sample) and we want to pass its samples to next step
             artifact = get_individual_artifact(lims, sample)
@@ -57,6 +60,7 @@ def get_artifacts(lims, process_types, samples):
 @OPTION_STAGE_ID
 @OPTION_STEP_NAME
 def main(process, workflow, stage, step_name):
+
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
 

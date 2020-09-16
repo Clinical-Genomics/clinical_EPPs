@@ -1,7 +1,9 @@
 from genologics.entities import Process, Artifact
 from genologics.config import BASEURI
-from clinical_EPPs.exceptions import (QueueArtifactsError)
+from clinical_EPPs.exceptions import QueueArtifactsError
 from genologics.lims import Lims
+import sys
+
 
 def get_process_samples(process):
     """Get all samples in a process"""
@@ -19,7 +21,8 @@ def get_sample_artifact(lims, sample):
 
     return Artifact(lims, id=sample.id + "PA1")
 
-def get_artifacts(process: Process, inputs: bool)-> list:
+
+def get_artifacts(process: Process, inputs: bool) -> list:
     """If inputs is True, return all input analytes of the process,
     otherwise return all output analytes of the process"""
 
@@ -30,10 +33,10 @@ def get_artifacts(process: Process, inputs: bool)-> list:
     return artifacts
 
 
-def filter_artifacts(artifacts: list, udf: str, value)-> list:
+def filter_artifacts(artifacts: list, udf: str, value) -> list:
     """return a list of only artifacts with udf==value"""
 
-    return [a for a in artifacts if a.udf.get(udf)==value]
+    return [a for a in artifacts if a.udf.get(udf) == value]
 
 
 def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
@@ -49,13 +52,23 @@ def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str
         raise QueueArtifactsError("Failed to queue artifacts.")
 
 
-def get_latest_artifact(artifacts: list)-> Artifact:
-    """Get artifact with oldest parent_process.date_run"""
+def get_latest_artifact(
+    lims: Lims, sample_id: str, artifact_type: str, process_type: list
+) -> Artifact:
+    """Searching for all artifacts associated with sample_id that were produced by
+    process_type and that are of type artifact_type. Returning the artifact with
+    latest parent_process.date_run. If there are many such artifacts only one will 
+    be returned."""
 
+    artifacts = lims.get_artifacts(
+        samplelimsid=sample_id,
+        type=artifact_type,
+        process_type=process_type,
+    )
+    if not artifacts:
+        sys.exit(f"Could not find artifacts")
     latest = artifacts[0]
     for artifact in artifacts:
         if artifact.parent_process.date_run > latest.parent_process.date_run:
             latest = artifact
     return latest
-
-
