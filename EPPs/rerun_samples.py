@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 
-from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError, DuplicateSampleError
+from clinical_EPPs.exceptions import (
+    Clinical_EPPsError,
+    QueueArtifactsError,
+    DuplicateSampleError,
+)
+from clinical_EPPs.utils import (
+    get_artifacts,
+    filter_artifacts,
+    queue_artifacts,
+    get_latest_artifact,
+)
 
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
@@ -8,34 +18,6 @@ from genologics.entities import Process, Stage
 
 import sys
 import click
-
-
-def get_artifacts(process, inputs):
-    """If inputs is true, return all input analytes of the process,
-    otherwise return all output analytes of the process"""
-
-    if inputs:
-        artifacts = process.all_inputs(unique=True)
-    else:
-        artifacts = [a for a in process.all_outputs(unique=True) if a.type == "Analyte"]
-    return artifacts
-
-
-def filter_artifacts(artifacts, udf):
-    """return a list of only artifacts with udf==True"""
-
-    filtered_artifacts = [a for a in artifacts if a.udf.get(udf)==True]
-    return filtered_artifacts
-
-
-def get_latest_artifact(artifacts):
-    """Get artifact with oldest parent_process.date_run"""
-
-    latest = artifacts[0]
-    for artifact in artifacts:
-        if artifact.parent_process.date_run > latest.parent_process.date_run:
-            latest = artifact
-    return latest
 
 
 def get_artifacts_to_requeue(lims, rerun_arts, step_name):
@@ -50,8 +32,11 @@ def get_artifacts_to_requeue(lims, rerun_arts, step_name):
             type="Analyte",
             process_type=[step_name],
         )
-        rerun_art = get_latest_artifact(rerun_step_in_arts)
-        artifacts_to_requeue.append(rerun_art)
+        if not rerun_step_in_arts:
+            sys.exit(f'could not find artifact to requeue for {art.id}')
+        requeue_art = get_latest_artifact(rerun_step_in_arts)
+
+        artifacts_to_requeue.append(requeue_art)
 
     return set(artifacts_to_requeue)
 
@@ -73,17 +58,6 @@ def check_same_sample_in_many_rerun_pools(rerun_arts):
         )
 
 
-def queue_artifacts(lims, artifacts, workflow_id, stage_id):
-    """Queue artifacts to stage in workflow"""
-    stage_uri = (
-        f"{BASEURI}/api/v2/configuration/workflows/{workflow_id}/stages/{stage_id}"
-    )
-    try:
-        lims.route_artifacts(artifacts, stage_uri=stage_uri)
-    except:
-        raise QueueArtifactsError("Failed to queue artifacts.")
-
-
 option_process = click.option(
     "-p", "--process", required=True, help="Lims id for current Process"
 )
@@ -103,7 +77,7 @@ def main(process, workflow, stage, udf, step_name):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
-    rerun_arts = filter_artifacts(artifacts, udf)
+    rerun_arts = filter_artifacts(artifacts, udf, True)
     if rerun_arts:
         artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, step_name)
         check_same_sample_in_many_rerun_pools(artifacts_to_requeue)

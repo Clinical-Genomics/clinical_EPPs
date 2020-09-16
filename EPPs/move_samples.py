@@ -1,45 +1,13 @@
 #!/usr/bin/env python
 
 from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
-
+from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process
 
 import sys
 import click
-
-
-def get_artifacts(process, inputs):
-    """If inputs is true, return all input analytes of the process,
-    otherwise return all output analytes of the process"""
-
-    if inputs:
-        artifacts = process.all_inputs(unique=True)
-    else:
-        artifacts = [a for a in process.all_outputs(unique=True) if a.type == "Analyte"]
-    return artifacts
-
-
-def filter_artifacts(artifacts, udf):
-    """return a list of only artifacts with udf==True"""
-
-    filtered_artifacts = [a for a in artifacts if a.udf.get(udf)==True]
-    return filtered_artifacts
-
-
-def queue_artifacts(lims, artifacts, workflow_id, stage_id):
-    """Queue artifacts to stage in workflow"""
-
-    stage_uri = (
-        f"{BASEURI}/api/v2/configuration/workflows/{workflow_id}/stages/{stage_id}"
-    )
-
-    try:
-        lims.route_artifacts(artifacts, stage_uri=stage_uri)
-    except:
-        raise QueueArtifactsError("Failed to queue artifacts.")
-
 
 option_process = click.option(
     "-p", "--process", required=True, help="Lims id for current Process"
@@ -63,11 +31,11 @@ option_process = click.option(
 def main(process, workflow, stage, udf, inputs):
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
-    
+
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, inputs)
-    filtered_artifacts = filter_artifacts(artifacts, udf)
+    filtered_artifacts = filter_artifacts(artifacts, udf, True)
 
     try:
         queue_artifacts(lims, artifacts, workflow, stage)
