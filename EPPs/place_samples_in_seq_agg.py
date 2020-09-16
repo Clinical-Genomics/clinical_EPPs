@@ -6,6 +6,8 @@ from clinical_EPPs.utils import (
     filter_artifacts,
     queue_artifacts,
     get_latest_artifact,
+    get_process_samples,
+    get_sample_artifact
 )
 from clinical_EPPs.options import *
 from genologics.lims import Lims
@@ -16,14 +18,6 @@ import sys
 import click
 
 
-def get_samples_process(process):
-
-    all_samples = []
-    for art in process.all_inputs():
-        all_samples += art.samples
-
-    return set(all_samples)
-
 
 def get_pool_from_sort(lims, process_types, sample):
     all_arts_in_sort = lims.get_artifacts(
@@ -31,11 +25,6 @@ def get_pool_from_sort(lims, process_types, sample):
     )
     pool = get_latest_artifact(all_arts_in_sort)
     return pool
-
-
-def get_individual_artifact(lims, sample):
-    ## Assuming first artifact is allways named sample.id + 'PA1.
-    return Artifact(lims, id=sample.id + "PA1")
 
 
 def get_artifacts(lims, process_types, samples):
@@ -73,7 +62,7 @@ def main(process, workflow, stage, step_name):
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
-    samples = get_samples_process(process)
+    samples = get_process_samples(process)
     artifacts = get_artifacts(lims, step_name, samples)
     try:
         queue_artifacts(lims, artifacts, workflow, stage)

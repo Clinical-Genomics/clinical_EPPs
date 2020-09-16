@@ -3,7 +3,21 @@ from genologics.config import BASEURI
 from clinical_EPPs.exceptions import (QueueArtifactsError)
 from genologics.lims import Lims
 
+def get_process_samples(process):
+    """Get all samples in a process"""
 
+    all_samples = []
+    for art in process.all_inputs():
+        all_samples += art.samples
+
+    return set(all_samples)
+
+
+def get_sample_artifact(lims, sample):
+    """Returning the initial artifact related to a sample.
+    Assuming first artifact is allways named sample.id + 'PA1."""
+
+    return Artifact(lims, id=sample.id + "PA1")
 
 def get_artifacts(process: Process, inputs: bool)-> list:
     """If inputs is True, return all input analytes of the process,
@@ -19,8 +33,7 @@ def get_artifacts(process: Process, inputs: bool)-> list:
 def filter_artifacts(artifacts: list, udf: str, value)-> list:
     """return a list of only artifacts with udf==value"""
 
-    filtered_artifacts = [a for a in artifacts if a.udf.get(udf)==value]
-    return filtered_artifacts
+    return [a for a in artifacts if a.udf.get(udf)==value]
 
 
 def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
