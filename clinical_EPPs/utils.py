@@ -1,9 +1,11 @@
 from genologics.entities import Process, Artifact
+from genologics.config import BASEURI
+from clinical_EPPs.exceptions import (QueueArtifactsError)
 from genologics.lims import Lims
 
 
 
-def get_artifacts(process: Process, inputs: bool) --> list:
+def get_artifacts(process: Process, inputs: bool)-> list:
     """If inputs is True, return all input analytes of the process,
     otherwise return all output analytes of the process"""
 
@@ -14,7 +16,7 @@ def get_artifacts(process: Process, inputs: bool) --> list:
     return artifacts
 
 
-def filter_artifacts(artifacts: list, udf: str, value) --> list:
+def filter_artifacts(artifacts: list, udf: str, value)-> list:
     """return a list of only artifacts with udf==value"""
 
     filtered_artifacts = [a for a in artifacts if a.udf.get(udf)==value]
@@ -34,7 +36,7 @@ def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str
         raise QueueArtifactsError("Failed to queue artifacts.")
 
 
-def get_latest_artifact(artifacts: list) --> Artifact:
+def get_latest_artifact(artifacts: list)-> Artifact:
     """Get artifact with oldest parent_process.date_run"""
 
     latest = artifacts[0]

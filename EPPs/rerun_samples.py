@@ -2,7 +2,6 @@
 
 from clinical_EPPs.exceptions import (
     Clinical_EPPsError,
-    QueueArtifactsError,
     DuplicateSampleError,
 )
 from clinical_EPPs.utils import (
@@ -11,6 +10,8 @@ from clinical_EPPs.utils import (
     queue_artifacts,
     get_latest_artifact,
 )
+from clinical_EPPs.options import *
+
 
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
@@ -64,15 +65,12 @@ option_process = click.option(
 
 
 @click.command()
-@option_process
-@click.option("-w", "--workflow", required=True, help="Destination workflow id.")
-@click.option("-s", "--stage", required=True, help="Destination stage id.")
-@click.option(
-    "-n", "--step-name", required=True, help="Name of the step before the rerun step."
-)
-@click.option(
-    "-u", "--udf", required=True, help="UDF that will tell wich artifacts to rerun."
-)
+@OPTION_PROCESS
+@OPTION_WORKFLOW_ID
+@OPTION_STAGE_ID
+@OPTION_STEP_NAME
+@OPTION_UDF
+
 def main(process, workflow, stage, udf, step_name):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
