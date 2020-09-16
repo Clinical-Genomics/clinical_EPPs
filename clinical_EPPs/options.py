@@ -17,5 +17,5 @@ OPTION_INPUT_OUTPUT = click.option(
     help="Use this flag if you run the script from a QC step.",
 )
 OPTION_STEP_NAME = click.option(
-    "-n", "--step-name", required=True, help="Name of the step before the rerun step."
+    "-n", "--step-name", required=True, multiple=True, help="Name of the step before the rerun step."
 )
