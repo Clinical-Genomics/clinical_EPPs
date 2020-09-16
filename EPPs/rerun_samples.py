@@ -10,17 +10,22 @@ import sys
 import click
 
 
-def get_rerun_artifacts(process, udf):
-    """Get artifacts to rerun"""
+def get_artifacts(process, inputs):
+    """If inputs is true, return all input analytes of the process,
+    otherwise return all output analytes of the process"""
 
-    rerun_arts = []
-    for art in process.all_outputs(unique=True):
-        if art.type != "Analyte":
-            continue
-        if art.udf.get(udf) != True:
-            continue
-        rerun_arts.append(art)
-    return rerun_arts
+    if inputs:
+        artifacts = process.all_inputs(unique=True)
+    else:
+        artifacts = [a for a in process.all_outputs(unique=True) if a.type == "Analyte"]
+    return artifacts
+
+
+def filter_artifacts(artifacts, udf):
+    """return a list of only artifacts with udf==True"""
+
+    filtered_artifacts = [a for a in artifacts if a.udf.get(udf)==True]
+    return filtered_artifacts
 
 
 def get_latest_artifact(artifacts):
@@ -97,7 +102,8 @@ option_process = click.option(
 def main(process, workflow, stage, udf, step_name):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
-    rerun_arts = get_rerun_artifacts(process, udf)
+    artifacts = get_artifacts(process, False)
+    rerun_arts = filter_artifacts(artifacts, udf)
     if rerun_arts:
         artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, step_name)
         check_same_sample_in_many_rerun_pools(artifacts_to_requeue)
