@@ -1,8 +1,11 @@
 from genologics.entities import Process, Artifact
 from genologics.config import BASEURI
-from clinical_EPPs.exceptions import QueueArtifactsError
 from genologics.lims import Lims
+
+from operator import attrgetter
 import sys
+
+from clinical_EPPs.exceptions import QueueArtifactsError
 
 
 def get_process_samples(process):
@@ -57,7 +60,7 @@ def get_latest_artifact(
 ) -> Artifact:
     """Searching for all artifacts associated with sample_id that were produced by
     process_type and that are of type artifact_type. Returning the artifact with
-    latest parent_process.date_run. If there are many such artifacts only one will 
+    latest parent_process.date_run. If there are many such artifacts only one will
     be returned."""
 
     artifacts = lims.get_artifacts(
@@ -65,10 +68,9 @@ def get_latest_artifact(
         type=artifact_type,
         process_type=process_type,
     )
+
     if not artifacts:
         sys.exit(f"Could not find artifacts")
-    latest = artifacts[0]
-    for artifact in artifacts:
-        if artifact.parent_process.date_run > latest.parent_process.date_run:
-            latest = artifact
-    return latest
+    sorted(artifacts, key=attrgetter("parent_process.date_run"))
+
+    return artifacts[-1]
