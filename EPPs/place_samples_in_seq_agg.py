@@ -2,14 +2,11 @@
 
 from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
 from clinical_EPPs.utils import (
-    get_artifacts,
-    filter_artifacts,
     queue_artifacts,
     get_latest_artifact,
     get_process_samples,
-    get_sample_artifact,
 )
-from clinical_EPPs.options import *
+from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process, Artifact
@@ -18,8 +15,10 @@ import sys
 import click
 
 
-def get_artifacts(lims: Lims, process_type: list, samples: list)-> list:
-    """Get samples and pools to place in sequence aggregation. 
+def get_pools_and_samples_to_queue(
+    lims: Lims, process_type: list, samples: list
+) -> list:
+    """Get samples and pools to place in sequence aggregation.
     Sort of specific script:
     Single arts                                       --> Next Step
     Cust001 - Pools --> split to pools from sort step --> Next Step
@@ -54,12 +53,20 @@ def get_artifacts(lims: Lims, process_type: list, samples: list)-> list:
     return set(send_to_next_step)
 
 
+PROCESS = options.process()
+WORKFLOW_ID = options.workflow_id("Destination workflow id.")
+STAGE_ID = options.stage_id("Destination stage id.")
+PROCESS_TYPE = options.process_type(
+    "The name(s) of the process type(s) from where we want to fetch the pools"
+)
+
+
 @click.command()
-@OPTION_PROCESS
-@OPTION_WORKFLOW_ID
-@OPTION_STAGE_ID
-@OPTION_STEP_NAME
-def main(process, workflow, stage, step_name):
+@PROCESS
+@WORKFLOW_ID
+@STAGE_ID
+@PROCESS_TYPE
+def main(process, workflow_id, stage_id, process_type):
 
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
@@ -67,9 +74,9 @@ def main(process, workflow, stage, step_name):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     samples = get_process_samples(process)
-    artifacts = get_artifacts(lims, step_name, samples)
+    artifacts = get_pools_and_samples_to_queue(lims, process_type, samples)
     try:
-        queue_artifacts(lims, artifacts, workflow, stage)
+        queue_artifacts(lims, artifacts, workflow_id, stage_id)
     except Clinical_EPPsError as e:
         sys.exit(e.message)
 

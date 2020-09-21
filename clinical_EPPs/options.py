@@ -1,29 +1,41 @@
 import click
 
-OPTION_PROCESS = click.option(
-    "-p", "--process", required=True, help="Lims id for current Process"
-)
 
-OPTION_WORKFLOW_ID = click.option(
-    "-w", "--workflow", required=True, help="Destination workflow id."
-)
-OPTION_STAGE_ID = click.option(
-    "-s", "--stage", required=True, help="Destination stage id."
-)
-OPTION_UDF = click.option(
-    "-u", "--udf", required=True, help="UDF that will tell wich artifacts to move."
-)
-OPTION_INPUT_OUTPUT = click.option(
-    "-i",
-    "--inputs",
-    default=False,
-    is_flag=True,
-    help="Use this flag if you run the script from a QC step.",
-)
-OPTION_PROCESS_TYPE = click.option(
-    "-n",
-    "--process-type",
-    required=True,
-    multiple=True,
-    help="Name of step (process.type.name).",
-)
+def process(help_string: str = "Lims id for current Process.") -> click.option:
+    return click.option("-p", "--process", required=True, help=help_string)
+
+
+def workflow_id(help_string: str = "Workflow id.") -> click.option:
+    return click.option("-w", "--workflow-id", required=True, help=help_string)
+
+
+def stage_id(help_string: str = "Stage id.") -> click.option:
+    return click.option("-s", "--stage-id", required=True, help=help_string)
+
+
+def udf(
+    help_string: str = "UDF name",
+) -> click.option:
+    return click.option("-u", "--udf", required=True, help=help_string)
+
+
+def input_artifacts(
+    help_string: str = "Use this flag if you run the script from a QC step.",
+) -> click.option:
+    return click.option(
+        "-i",
+        "--input-artifacts",
+        default=False,
+        is_flag=True,
+        help=help_string,
+    )
+
+
+def process_type(help_string: str = "Process type name.") -> click.option:
+    return click.option(
+        "-n",
+        "--process-type",
+        required=True,
+        multiple=True,
+        help=help_string,
+    )
