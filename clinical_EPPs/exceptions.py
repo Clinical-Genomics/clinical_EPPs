@@ -9,5 +9,10 @@ class QueueArtifactsError(Clinical_EPPsError):
 class DuplicateSampleError(Clinical_EPPsError):
     pass
 
+class MissingArtifactError(Clinical_EPPsError):
+    pass
+
+class WhatToCallThisError(Clinical_EPPsError):
+    pass
 
 

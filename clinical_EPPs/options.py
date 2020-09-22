@@ -18,6 +18,10 @@ def udf(
 ) -> click.option:
     return click.option("-u", "--udf", required=True, help=help_string)
 
+def log(
+    help_string: str = "Path to log file.",
+) -> click.option:
+    return click.option("-l", "--log", required=True, help=help_string)
 
 def input_artifacts(
     help_string: str = "Use this flag if you run the script from a QC step.",

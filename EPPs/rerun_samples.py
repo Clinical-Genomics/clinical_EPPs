@@ -3,12 +3,14 @@
 from clinical_EPPs.exceptions import (
     Clinical_EPPsError,
     DuplicateSampleError,
+    MissingArtifactError
 )
 from clinical_EPPs.utils import (
     get_artifacts,
     filter_artifacts,
     queue_artifacts,
     get_latest_artifact,
+    logger
 )
 from clinical_EPPs import options
 
@@ -17,6 +19,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process, Stage
 
+import logging
 import sys
 import click
 
@@ -32,10 +35,14 @@ def get_artifacts_to_requeue(lims: Lims, rerun_arts: list, process_type: list) -
     artifacts_to_requeue = []
 
     for art in rerun_arts:
-        representative_sample_id = art.samples[0].id
-        requeue_art = get_latest_artifact(
-            lims, representative_sample_id, "Analyte", process_type
+        representative_sample_id = art.samples[0].id ## hantera med if samples..
+        try:
+            requeue_art = get_latest_artifact(
+            lims, representative_sample_id, process_type
         )
+        except MissingArtifactError as e:
+            logging.warning(e.message)
+            continue
         artifacts_to_requeue.append(requeue_art)
     return set(artifacts_to_requeue)
 
@@ -57,6 +64,7 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
 
 
 @click.command()
+@options.log()
 @options.process()
 @options.workflow_id("Destination workflow id.")
 @options.stage_id("Destination stage id.")
@@ -64,8 +72,10 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
     "The name(s) of the process type(s) before the requeue step. Fetching artifact to requeue from here."
 )
 @options.udf("UDF that will tell wich artifacts to move.")
-def main(process, workflow_id, stage_id, udf, process_type):
+def main(process, workflow_id, stage_id, udf, process_type, log):
+    
     lims = Lims(BASEURI, USERNAME, PASSWORD)
+    logger(log)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)

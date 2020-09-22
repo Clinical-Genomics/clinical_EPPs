@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
 from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
-from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts
+from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts, logger
 from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process
 
+import logging
 import sys
 import click
 
 
 @click.command()
+@options.log()
 @options.process()
 @options.workflow_id("Destination workflow id.")
 @options.stage_id("Destination stage id.")
@@ -19,11 +21,12 @@ import click
 @options.input_artifacts(
     "Use this flag if you want to queue the input artifacts of the current process. Default is to queue the output artifacts (analytes) of the process."
 )
-def main(process, workflow_id, stage_id, udf, input_artifacts):
+def main(process, workflow_id, stage_id, udf, input_artifacts, log):
     """Queueing artifacts with <udf==True>, to stage with <stage-id>
     in workflow with <workflow-id>. Raising error if quiueing fails."""
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
+    logger(log)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, input_artifacts)
     filtered_artifacts = filter_artifacts(artifacts, udf, True)
