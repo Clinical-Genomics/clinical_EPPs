@@ -11,7 +11,7 @@ from clinical_EPPs.utils import (
     get_latest_artifact,
     get_sample_artifact,
     get_process_samples,
-    logger
+    cg_epp_logger
 )
 from clinical_EPPs import options
 from genologics.lims import Lims
@@ -71,11 +71,10 @@ def get_pools_and_samples_to_queue(
     "The name(s) of the process type(s) from where we want to fetch the pools"
 )
 def main(process, workflow_id, stage_id, process_type, log):
-
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
     
-    logger(log)
+    cg_epp_logger(log)
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     samples = get_process_samples(process)

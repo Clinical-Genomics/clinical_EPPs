@@ -10,7 +10,7 @@ from clinical_EPPs.utils import (
     filter_artifacts,
     queue_artifacts,
     get_latest_artifact,
-    logger
+    cg_epp_logger
 )
 from clinical_EPPs import options
 
@@ -73,9 +73,9 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
 )
 @options.udf("UDF that will tell wich artifacts to move.")
 def main(process, workflow_id, stage_id, udf, process_type, log):
-    
+
     lims = Lims(BASEURI, USERNAME, PASSWORD)
-    logger(log)
+    cg_epp_logger(log)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
