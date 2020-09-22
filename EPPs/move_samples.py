@@ -32,7 +32,7 @@ def main(process, workflow_id, stage_id, udf, input_artifacts, log):
     filtered_artifacts = filter_artifacts(artifacts, udf, True)
 
     try:
-        queue_artifacts(lims, artifacts, workflow_id, stage_id)
+        queue_artifacts(lims, filtered_artifacts, workflow_id, stage_id)
         print("Artifacts have been queued.", file=sys.stdout)
     except Clinical_EPPsError as e:
         sys.exit(e.message)
