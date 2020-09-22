@@ -10,20 +10,15 @@ from genologics.entities import Process
 import sys
 import click
 
-PROCESS = options.process()
-WORKFLOW_ID = options.workflow_id("Destination workflow id.")
-STAGE_ID = options.stage_id("Destination stage id.")
-UDF = options.udf("UDF that will tell wich artifacts to move.")
-INPUT_ARTIFACTS = options.input_artifacts(
-    "Use this flag if you want to queue the input artifacts of the current process. Default is to queue the output artifacts (analytes) of the process."
-)
-
 
 @click.command()
-@WORKFLOW_ID
-@STAGE_ID
-@UDF
-@INPUT_ARTIFACTS
+@options.process()
+@options.workflow_id("Destination workflow id.")
+@options.stage_id("Destination stage id.")
+@options.udf("UDF that will tell wich artifacts to move.")
+@options.input_artifacts(
+    "Use this flag if you want to queue the input artifacts of the current process. Default is to queue the output artifacts (analytes) of the process."
+)
 def main(process, workflow_id, stage_id, udf, input_artifacts):
     """Queueing artifacts with <udf==True>, to stage with <stage-id>
     in workflow with <workflow-id>. Raising error if quiueing fails."""
@@ -35,6 +30,7 @@ def main(process, workflow_id, stage_id, udf, input_artifacts):
 
     try:
         queue_artifacts(lims, artifacts, workflow_id, stage_id)
+        print("Artifacts have been queued.", file=sys.stdout)
     except Clinical_EPPsError as e:
         sys.exit(e.message)
 

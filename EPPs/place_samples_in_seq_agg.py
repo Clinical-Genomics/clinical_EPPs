@@ -4,6 +4,7 @@ from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
 from clinical_EPPs.utils import (
     queue_artifacts,
     get_latest_artifact,
+    get_sample_artifact,
     get_process_samples,
 )
 from clinical_EPPs import options
@@ -42,7 +43,7 @@ def get_pools_and_samples_to_queue(
             artifact = get_latest_artifact(lims, sample.id, "Analyte", process_type)
         else:
             ## this is a pool (or a sample) and we want to pass its samples to next step
-            artifact = get_individual_artifact(lims, sample)
+            artifact = get_sample_artifact(lims, sample)
         send_to_next_step.append(artifact)
     if missing_cust:
         sys.exit(
@@ -52,20 +53,13 @@ def get_pools_and_samples_to_queue(
 
     return set(send_to_next_step)
 
-
-PROCESS = options.process()
-WORKFLOW_ID = options.workflow_id("Destination workflow id.")
-STAGE_ID = options.stage_id("Destination stage id.")
-PROCESS_TYPE = options.process_type(
+@click.command()
+@options.process()
+@options.workflow_id("Destination workflow id.")
+@options.stage_id("Destination stage id.")
+@options.process_type(
     "The name(s) of the process type(s) from where we want to fetch the pools"
 )
-
-
-@click.command()
-@PROCESS
-@WORKFLOW_ID
-@STAGE_ID
-@PROCESS_TYPE
 def main(process, workflow_id, stage_id, process_type):
 
     """Queueing artifacts with given udf==True, to stage in workflow.
@@ -77,6 +71,7 @@ def main(process, workflow_id, stage_id, process_type):
     artifacts = get_pools_and_samples_to_queue(lims, process_type, samples)
     try:
         queue_artifacts(lims, artifacts, workflow_id, stage_id)
+        print("Artifacts have been queued.", file=sys.stdout)
     except Clinical_EPPsError as e:
         sys.exit(e.message)
 

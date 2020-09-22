@@ -56,22 +56,15 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
         )
 
 
-PROCESS = options.process()
-WORKFLOW_ID = options.workflow_id("Destination workflow id.")
-STAGE_ID = options.stage_id("Destination stage id.")
-UDF = options.udf("UDF that will tell wich artifacts to move.")
-PROCESS_TYPE = options.process_type(
+@click.command()
+@options.process()
+@options.workflow_id("Destination workflow id.")
+@options.stage_id("Destination stage id.")
+@options.process_type(
     "The name(s) of the process type(s) before the requeue step. Fetching artifact to requeue from here."
 )
-
-
-@click.command()
-@PROCESS
-@WORKFLOW_ID
-@STAGE_ID
-@PROCESS_TYPE
-@UDF
-def main(process, workflow, stage, udf, process_type):
+@options.udf("UDF that will tell wich artifacts to move.")
+def main(process, workflow_id, stage_id, udf, process_type):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
@@ -80,7 +73,7 @@ def main(process, workflow, stage, udf, process_type):
         artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, process_type)
         check_same_sample_in_many_rerun_pools(artifacts_to_requeue)
         try:
-            queue_artifacts(lims, artifacts_to_requeue, workflow, stage)
+            queue_artifacts(lims, artifacts_to_requeue, workflow_id, stage_id)
             print("Artifacts have been queued.", file=sys.stdout)
         except Clinical_EPPsError as e:
             sys.exit(e.message)
