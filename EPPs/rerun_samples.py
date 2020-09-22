@@ -3,7 +3,8 @@
 from clinical_EPPs.exceptions import (
     Clinical_EPPsError,
     DuplicateSampleError,
-    MissingArtifactError
+    MissingArtifactError,
+    WhatToCallThisError
 )
 from clinical_EPPs.utils import (
     get_artifacts,
@@ -33,7 +34,7 @@ def get_artifacts_to_requeue(lims: Lims, rerun_arts: list, process_type: list) -
     """
 
     artifacts_to_requeue = []
-
+    break_rerun = False
     for art in rerun_arts:
         representative_sample_id = art.samples[0].id ## hantera med if samples..
         try:
@@ -42,8 +43,11 @@ def get_artifacts_to_requeue(lims: Lims, rerun_arts: list, process_type: list) -
         )
         except MissingArtifactError as e:
             logging.warning(e.message)
+            break_rerun = True
             continue
         artifacts_to_requeue.append(requeue_art)
+    if break_rerun:
+        raise WhatToCallThisError('Issues finding artifacts to requeue. See log')
     return set(artifacts_to_requeue)
 
 
@@ -80,9 +84,9 @@ def main(process, workflow_id, stage_id, udf, process_type, log):
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
     if rerun_arts:
-        artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, process_type)
-        check_same_sample_in_many_rerun_pools(artifacts_to_requeue)
         try:
+            artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, process_type)
+            check_same_sample_in_many_rerun_pools(artifacts_to_requeue)
             queue_artifacts(lims, artifacts_to_requeue, workflow_id, stage_id)
             print("Artifacts have been queued.", file=sys.stdout)
         except Clinical_EPPsError as e:
