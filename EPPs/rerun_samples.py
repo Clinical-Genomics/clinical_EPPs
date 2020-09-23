@@ -79,7 +79,10 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
 def main(process, workflow_id, stage_id, udf, process_type, log):
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
-    cg_epp_logger(lims, log)
+    log_path = pathlib.Path(log)
+    if not log_path.is_file():
+       log_path = get_lims_log_file(lims, log)
+    logging.basicConfig(filename = log_path.name, filemode='a', level=logging.INFO)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
