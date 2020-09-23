@@ -20,6 +20,7 @@ from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process, Stage
 
+import pathlib
 import logging
 import sys
 import click
@@ -82,7 +83,7 @@ def main(process, workflow_id, stage_id, udf, process_type, log):
     log_path = pathlib.Path(log)
     if not log_path.is_file():
        log_path = get_lims_log_file(lims, log)
-    logging.basicConfig(filename = log_path.name, filemode='a', level=logging.INFO)
+    logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
