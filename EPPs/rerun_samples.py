@@ -78,6 +78,9 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
 )
 @options.udf("UDF that will tell wich artifacts to move.")
 def main(process, workflow_id, stage_id, udf, process_type, log):
+    """Script to requeue samples for sequencing.
+    
+    """
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     log_path = pathlib.Path(log)
@@ -88,6 +91,7 @@ def main(process, workflow_id, stage_id, udf, process_type, log):
 
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
+
     if rerun_arts:
         try:
             artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, process_type)

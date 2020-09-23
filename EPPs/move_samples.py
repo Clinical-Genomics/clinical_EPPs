@@ -10,6 +10,7 @@ from genologics.entities import Process
 import logging
 import sys
 import click
+import pathlib
 
 
 @click.command()
@@ -22,7 +23,9 @@ import click
     "Use this flag if you want to queue the input artifacts of the current process. Default is to queue the output artifacts (analytes) of the process."
 )
 def main(process, workflow_id, stage_id, udf, input_artifacts, log):
-    """Queueing artifacts with <udf==True>, to stage with <stage-id>
+    """Script to move aritfats to another stage.
+    
+    Queueing artifacts with <udf==True>, to stage with <stage-id>
     in workflow with <workflow-id>. Raising error if quiueing fails."""
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)

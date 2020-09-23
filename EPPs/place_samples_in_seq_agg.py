@@ -21,6 +21,7 @@ from genologics.entities import Process, Artifact
 import logging
 import sys
 import click
+import pathlib
 
 
 def get_pools_and_samples_to_queue(
@@ -80,6 +81,7 @@ def main(process, workflow_id, stage_id, process_type, log):
        log_path = get_lims_log_file(lims, log)
     logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
     process = Process(lims, id=process)
+
     samples = get_process_samples(process)
 
     try:
