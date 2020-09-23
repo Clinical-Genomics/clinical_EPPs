@@ -74,8 +74,8 @@ def main(process, workflow_id, stage_id, process_type, log):
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
     
-    cg_epp_logger(log)
     lims = Lims(BASEURI, USERNAME, PASSWORD)
+    cg_epp_logger(lims, log)
     process = Process(lims, id=process)
     samples = get_process_samples(process)
 

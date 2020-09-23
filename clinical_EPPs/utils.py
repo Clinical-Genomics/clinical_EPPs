@@ -4,6 +4,7 @@ from genologics.lims import Lims
 
 from operator import attrgetter
 import sys
+import os
 import logging
 
 
@@ -43,6 +44,11 @@ def filter_artifacts(artifacts: list, udf: str, value) -> list:
 
     return [a for a in artifacts if a.udf.get(udf) == value]
 
+def unique_list_of_ids(entity_list: list) -> list:
+    """entity_list: list of any type of genologics entity.
+    retruning unique list of entity ids"""
+
+    return set([e.id for e in entity_list])
 
 def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
     """Queue artifacts to stage in workflow"""
@@ -54,8 +60,11 @@ def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str
         f"{BASEURI}/api/v2/configuration/workflows/{workflow_id}/stages/{stage_id}"
     )
 
+    artifact_ids = unique_list_of_ids(artifacts)
     try:
         lims.route_artifacts(artifacts, stage_uri=stage_uri)
+        logging.info(f"Queueing artifacts to {stage_uri}.") 
+        logging.info(f"The following artifacts have been queued: {' ,'.join(artifact_ids)}")
     except:
         raise QueueArtifactsError("Failed to queue artifacts.")
 
@@ -77,6 +86,27 @@ def get_latest_artifact(lims: Lims, sample_id: str, process_type: list) -> Artif
 
     return artifacts[-1]
 
-def cg_epp_logger(log_file: str):
+
+def cg_epp_logger(lims, log_file: str):
+    """The logger is created to function bothe when the EPP is run from command 
+    line and when its run through the lims interface."""
+
+    if not os.path.isfile(log_file):
+        # Allways when running through lims interface
+        log_artifact = Artifact(lims, id=log_file)
+        try:
+            files = log_artifact.files
+        except:
+            # No log_artifact exist yet. 
+            # This is the first cg_epp_logger is run in this step
+            files = None
+        if files:
+            something = BASEURI.split(':')[1]
+            log_file = files[0].content_location.split(something)[1]
+
     logging.basicConfig(filename = log_file, filemode='a', level=logging.INFO)
+
+
+
+
 
