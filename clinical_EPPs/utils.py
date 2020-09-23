@@ -50,7 +50,7 @@ def unique_list_of_ids(entity_list: list) -> list:
 
     return set([e.id for e in entity_list])
 
-def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
+def queue_artifacts(lims: Lims, artifacts: List[Artifact], workflow_id: str, stage_id: str) -> None:
     """Queue artifacts to stage in workflow"""
 
     if not artifacts:
@@ -105,7 +105,6 @@ def cg_epp_logger(lims, log_file: str):
             log_file = files[0].content_location.split(something)[1]
 
     logging.basicConfig(filename = log_file, filemode='a', level=logging.INFO)
-
 
 
 
