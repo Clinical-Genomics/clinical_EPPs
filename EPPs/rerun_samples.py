@@ -85,6 +85,7 @@ def main(process, workflow_id, stage_id, udf, process_type, log):
        log_path = get_lims_log_file(lims, log)
     logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
     process = Process(lims, id=process)
+    
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
     if rerun_arts:
