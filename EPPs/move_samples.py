@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
-from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts, cg_epp_logger
+from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts, get_lims_log_file
 from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
@@ -24,10 +24,14 @@ import click
 def main(process, workflow_id, stage_id, udf, input_artifacts, log):
     """Queueing artifacts with <udf==True>, to stage with <stage-id>
     in workflow with <workflow-id>. Raising error if quiueing fails."""
-    
+
     lims = Lims(BASEURI, USERNAME, PASSWORD)
-    cg_epp_logger(lims, log)
+    log_path = pathlib.Path(log)
+    if not log_path.is_file():
+       log_path = get_lims_log_file(lims, log)
+    logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
     process = Process(lims, id=process)
+
     artifacts = get_artifacts(process, input_artifacts)
     filtered_artifacts = filter_artifacts(artifacts, udf, True)
 
