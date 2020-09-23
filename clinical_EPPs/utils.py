@@ -28,8 +28,8 @@ def get_sample_artifact(lims, sample):
 
 
 def get_artifacts(process: Process, inputs: bool) -> list:
-    """If inputs is True, return all input analytes of the process,
-    otherwise return all output analytes of the process"""
+    """If inputs is True, returning all input analytes of the process,
+    otherwise returning all output analytes of the process"""
 
     if inputs:
         artifacts = process.all_inputs(unique=True)
@@ -39,20 +39,20 @@ def get_artifacts(process: Process, inputs: bool) -> list:
 
 
 def filter_artifacts(artifacts: list, udf: str, value) -> list:
-    """return a list of only artifacts with udf==value"""
+    """Returning a list of only artifacts with udf==value"""
 
     return [a for a in artifacts if a.udf.get(udf) == value]
 
 
 def unique_list_of_ids(entity_list: list) -> list:
-    """entity_list: list of any type of genologics entity.
-    retruning unique list of entity ids"""
+    """Arg: entity_list: list of any type of genologics entity.
+    Retruning unique list of entity ids."""
 
     return set([e.id for e in entity_list])
 
 
 def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
-    """Queue artifacts to stage in workflow"""
+    """Queue artifacts to stage in workflow."""
 
     if not artifacts:
         logging.warning("Failed trying to queue empty list of artifacts.")
@@ -73,10 +73,13 @@ def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str
 
 
 def get_latest_artifact(lims: Lims, sample_id: str, process_type: list) -> Artifact:
-    """Searching for all artifacts (Analytes) associated with <sample_id> that
-    were produced by <process_type>. Returning the artifact with latest
-    parent_process.date_run. If there are many such artifacts only one will
-    be returned."""
+    """Getting the most recently generated artifact by process_type and sample_id.
+
+    Searching for all artifacts (Analytes) associated with <sample_id> that
+    were produced by <process_type>. 
+    
+    Returning the artifact with latest parent_process.date_run. 
+    If there are many such artifacts only one will be returned."""
 
     artifacts = lims.get_artifacts(
         samplelimsid=sample_id,
