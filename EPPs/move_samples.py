@@ -26,7 +26,7 @@ def main(process, workflow_id, stage_id, udf, input_artifacts, log):
     in workflow with <workflow-id>. Raising error if quiueing fails."""
     
     lims = Lims(BASEURI, USERNAME, PASSWORD)
-    cg_epp_logger(log)
+    cg_epp_logger(lims, log)
     process = Process(lims, id=process)
     artifacts = get_artifacts(process, input_artifacts)
     filtered_artifacts = filter_artifacts(artifacts, udf, True)
