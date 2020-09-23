@@ -98,7 +98,7 @@ def cg_epp_logger(lims, log_file: str):
             files = log_artifact.files
         except:
             # No log_artifact exist yet. 
-            # This is the first cg_epp_logger is run in this step
+            # This is the first time cg_epp_logger is run in this step
             files = None
         if files:
             something = BASEURI.split(':')[1]
