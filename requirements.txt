@@ -2,3 +2,5 @@ genologics
 beautifulsoupo
 Flask
 flask_sqlalchemy
+click
+pathlib

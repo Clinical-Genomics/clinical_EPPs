@@ -11,7 +11,6 @@ from clinical_EPPs.utils import (
     filter_artifacts,
     queue_artifacts,
     get_latest_artifact,
-    get_lims_log_file
 )
 from clinical_EPPs import options
 

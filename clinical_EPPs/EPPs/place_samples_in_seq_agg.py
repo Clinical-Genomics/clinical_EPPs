@@ -11,7 +11,6 @@ from clinical_EPPs.utils import (
     get_latest_artifact,
     get_sample_artifact,
     get_process_samples,
-    get_lims_log_file
 )
 from clinical_EPPs import options
 from genologics.lims import Lims

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
-from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts, get_lims_log_file
+from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts
 from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.entities import Process
