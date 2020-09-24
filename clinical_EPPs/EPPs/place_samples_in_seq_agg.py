@@ -17,14 +17,15 @@ from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.entities import Process, Artifact, Sample
 
+from typing import List
 import logging
 import sys
 import click
 
 
 def get_pools_and_samples_to_queue(
-    lims: Lims, process_type: list(str), samples: list(Sample)
-) -> list(Artifact):
+    lims: Lims, process_type: List[str], samples: List[Sample]
+) -> List[Artifact]:
     """Get samples and pools to place in sequence aggregation.
     Sort of specific script:
     Single arts                                       --> Next Step

@@ -6,11 +6,13 @@ from operator import attrgetter
 import sys
 import logging
 import pathlib
+from typing import List
+
 
 from clinical_EPPs.exceptions import QueueArtifactsError, MissingArtifactError
 
 
-def get_process_samples(process: Process) -> list(Sample):
+def get_process_samples(process: Process) -> List[Sample]:
     """Get all samples in a process"""
 
     all_samples = []
@@ -27,7 +29,7 @@ def get_sample_artifact(lims: Lims, sample: Sample) -> Artifact:
     return Artifact(lims, id=f"{sample.id}PA1")
 
 
-def get_artifacts(process: Process, inputs: bool) -> list(Artifact):
+def get_artifacts(process: Process, inputs: bool) -> List[Artifact]:
     """If inputs is True, returning all input analytes of the process,
     otherwise returning all output analytes of the process"""
 
@@ -38,20 +40,20 @@ def get_artifacts(process: Process, inputs: bool) -> list(Artifact):
     return artifacts
 
 
-def filter_artifacts(artifacts: list(Artifact), udf: str, value) -> list(Artifact):
+def filter_artifacts(artifacts: List[Artifact], udf: str, value) -> List[Artifact]:
     """Returning a list of only artifacts with udf==value"""
 
     return [a for a in artifacts if a.udf.get(udf) == value]
 
 
-def unique_list_of_ids(entity_list: list) -> list(str):
+def unique_list_of_ids(entity_list: list) -> List[str]:
     """Arg: entity_list: list of any type of genologics entity.
     Retruning unique list of entity ids."""
 
     return set([e.id for e in entity_list])
 
 
-def queue_artifacts(lims: Lims, artifacts: list(Artifact), workflow_id: str, stage_id: str) -> None:
+def queue_artifacts(lims: Lims, artifacts: List[Artifact], workflow_id: str, stage_id: str) -> None:
     """Queue artifacts to stage in workflow."""
 
     if not artifacts:
@@ -72,7 +74,7 @@ def queue_artifacts(lims: Lims, artifacts: list(Artifact), workflow_id: str, sta
         raise QueueArtifactsError("Failed to queue artifacts.")
 
 
-def get_latest_artifact(lims: Lims, sample_id: str, process_type: list(str)) -> Artifact:
+def get_latest_artifact(lims: Lims, sample_id: str, process_type: List[str]) -> Artifact:
     """Getting the most recently generated artifact by process_type and sample_id.
 
     Searching for all artifacts (Analytes) associated with <sample_id> that

@@ -18,12 +18,13 @@ from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.entities import Process, Stage, Artifact
 
+from typing import List
 import logging
 import sys
 import click
 
 
-def get_artifacts_to_requeue(lims: Lims, rerun_arts: list(Artifact), process_type: list(str)) -> list(Artifact):
+def get_artifacts_to_requeue(lims: Lims, rerun_arts: List[Artifact], process_type: List[str]) -> List[Artifact]:
     """Get input artifacts to define step (output artifacts of sort step)
     Args:
         lims: Lims
@@ -49,7 +50,7 @@ def get_artifacts_to_requeue(lims: Lims, rerun_arts: list(Artifact), process_typ
     return set(artifacts_to_requeue)
 
 
-def check_same_sample_in_many_rerun_pools(rerun_arts: list(Artifact)) -> None:
+def check_same_sample_in_many_rerun_pools(rerun_arts: List[Artifact]) -> None:
     """Check that the same sample does not occure in more than one of the pools to rerun."""
 
     all_samples = []
