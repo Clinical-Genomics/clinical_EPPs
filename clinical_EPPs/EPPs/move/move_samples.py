@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-from clinical_EPPs.exceptions import Clinical_EPPsError, QueueArtifactsError
-from clinical_EPPs.utils import get_artifacts, filter_artifacts, queue_artifacts
+from clinical_EPPs.exceptions import Clinical_EPPsError
+from clinical_EPPs.get.artifacts import get_artifacts, filter_artifacts
+from clinical_EPPs.put.queue import queue_artifacts
 from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.entities import Process
@@ -37,7 +38,3 @@ def move_samples(ctx, workflow_id, stage_id, udf, input_artifacts):
         print("Artifacts have been queued.", file=sys.stdout)
     except Clinical_EPPsError as e:
         sys.exit(e.message)
-
-
-if __name__ == "__main__":
-    main()

@@ -1,25 +1,12 @@
 from genologics.entities import Process, Artifact, Sample
-from genologics.config import BASEURI
 from genologics.lims import Lims
 
 from operator import attrgetter
-import sys
-import logging
-import pathlib
 from typing import List
 
 
 from clinical_EPPs.exceptions import QueueArtifactsError, MissingArtifactError
 
-
-def get_process_samples(process: Process) -> List[Sample]:
-    """Get all samples in a process"""
-
-    all_samples = []
-    for art in process.all_inputs():
-        all_samples += art.samples
-
-    return set(all_samples)
 
 
 def get_sample_artifact(lims: Lims, sample: Sample) -> Artifact:
@@ -46,34 +33,6 @@ def filter_artifacts(artifacts: List[Artifact], udf: str, value) -> List[Artifac
     return [a for a in artifacts if a.udf.get(udf) == value]
 
 
-def unique_list_of_ids(entity_list: list) -> List[str]:
-    """Arg: entity_list: list of any type of genologics entity.
-    Retruning unique list of entity ids."""
-
-    return set([e.id for e in entity_list])
-
-
-def queue_artifacts(lims: Lims, artifacts: List[Artifact], workflow_id: str, stage_id: str) -> None:
-    """Queue artifacts to stage in workflow."""
-
-    if not artifacts:
-        logging.warning("Failed trying to queue empty list of artifacts.")
-        raise MissingArtifactError("No artifacts to queue.")
-    stage_uri = (
-        f"{BASEURI}/api/v2/configuration/workflows/{workflow_id}/stages/{stage_id}"
-    )
-
-    artifact_ids = unique_list_of_ids(artifacts)
-    try:
-        lims.route_artifacts(artifacts, stage_uri=stage_uri)
-        logging.info(f"Queueing artifacts to {stage_uri}.")
-        logging.info(
-            f"The following artifacts have been queued: {' ,'.join(artifact_ids)}"
-        )
-    except:
-        raise QueueArtifactsError("Failed to queue artifacts.")
-
-
 def get_latest_artifact(lims: Lims, sample_id: str, process_type: List[str]) -> Artifact:
     """Getting the most recently generated artifact by process_type and sample_id.
 
@@ -97,23 +56,4 @@ def get_latest_artifact(lims: Lims, sample_id: str, process_type: List[str]) -> 
     return artifacts[-1]
 
 
-def get_lims_log_file(lims: Lims, file_id: str) -> pathlib.Path:
-    """Searching for a log Artifact with file_id. 
-    
-    If the artifact is found, returning the path to the attached file. 
-    Otherwise returning the file_id."""
 
-    log_artifact = Artifact(lims, id=file_id)
-
-    try:
-        files = log_artifact.files
-    except:
-        files = None
-
-    if files:
-        something = BASEURI.split(":")[1]
-        file_path = files[0].content_location.split(something)[1]
-    else:
-        file_path = file_id
-
-    return pathlib.Path(file_path)

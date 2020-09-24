@@ -2,16 +2,13 @@
 
 from clinical_EPPs.exceptions import (
     Clinical_EPPsError,
-    QueueArtifactsError,
     MissingArtifactError,
     WhatToCallThisError
 )
-from clinical_EPPs.utils import (
-    queue_artifacts,
-    get_latest_artifact,
-    get_sample_artifact,
-    get_process_samples,
-)
+from clinical_EPPs.get.artifacts import get_latest_artifact, get_sample_artifact
+from clinical_EPPs.get.samples import get_process_samples
+from clinical_EPPs.put.queue import queue_artifacts
+
 from clinical_EPPs import options
 from genologics.lims import Lims
 from genologics.entities import Process, Artifact, Sample
@@ -21,6 +18,7 @@ import logging
 import sys
 import click
 
+LOG = logging.getLogger(__name__)
 
 def get_pools_and_samples_to_queue(
     lims: Lims, process_type: List[str], samples: List[Sample]
@@ -41,7 +39,7 @@ def get_pools_and_samples_to_queue(
     for sample in samples:
         cust = sample.udf.get("customer")
         if not cust:
-            logging.warning(f"Sample {sample.id} has no customer.")
+            LOG.warning(f"Sample {sample.id} has no customer.")
             continue
             break_send_to_next_step = True
         elif cust == "cust001":
@@ -49,7 +47,7 @@ def get_pools_and_samples_to_queue(
             try:
                 artifact = get_latest_artifact(lims, sample.id, process_type)
             except MissingArtifactError as e:
-                logging.warning(e.message)
+                LOG.warning(e.message)
                 break_send_to_next_step = True
                 continue
         else:
@@ -81,10 +79,7 @@ def place_samples_in_seq_agg(ctx, workflow_id, stage_id, process_type):
     try:
         artifacts = get_pools_and_samples_to_queue(lims, process_type, samples)
         queue_artifacts(lims, artifacts, workflow_id, stage_id)
-        print("Artifacts have been queued.", file=sys.stdout)
+        click.echo("Artifacts have been queued.")
     except Clinical_EPPsError as e:
         sys.exit(e.message)
 
-
-if __name__ == "__main__":
-    main()

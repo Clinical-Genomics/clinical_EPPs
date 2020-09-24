@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from clinical_EPPs.utils import get_lims_log_file
+from clinical_EPPs.get.files import get_lims_log_file
 from clinical_EPPs import options
 
 from genologics.lims import Lims

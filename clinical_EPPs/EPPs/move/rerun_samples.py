@@ -22,6 +22,8 @@ import logging
 import sys
 import click
 
+LOG = logging.getLogger(__name__)
+
 
 def get_artifacts_to_requeue(lims: Lims, rerun_arts: List[Artifact], process_type: List[str]) -> List[Artifact]:
     """Get input artifacts to define step (output artifacts of sort step)
@@ -40,7 +42,7 @@ def get_artifacts_to_requeue(lims: Lims, rerun_arts: List[Artifact], process_typ
             lims, representative_sample_id, process_type
         )
         except MissingArtifactError as e:
-            logging.warning(e.message)
+            LOG.warning(e.message)
             break_rerun = True
             continue
         artifacts_to_requeue.append(requeue_art)
