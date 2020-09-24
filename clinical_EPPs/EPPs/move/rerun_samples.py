@@ -89,7 +89,7 @@ def rerun_samples(ctx, workflow_id, stage_id, udf, process_type):
             artifacts_to_requeue = get_artifacts_to_requeue(lims, rerun_arts, process_type)
             check_same_sample_in_many_rerun_pools(artifacts_to_requeue)
             queue_artifacts(lims, artifacts_to_requeue, workflow_id, stage_id)
-            print("Artifacts have been queued.", file=sys.stdout)
+            click.echo("Artifacts have been queued.")
         except Clinical_EPPsError as e:
             sys.exit(e.message)
 

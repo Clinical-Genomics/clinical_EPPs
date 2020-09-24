@@ -35,6 +35,6 @@ def move_samples(ctx, workflow_id, stage_id, udf, input_artifacts):
 
     try:
         queue_artifacts(lims, filtered_artifacts, workflow_id, stage_id)
-        print("Artifacts have been queued.", file=sys.stdout)
+        click.echo("Artifacts have been queued.")
     except Clinical_EPPsError as e:
         sys.exit(e.message)
