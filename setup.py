@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 import glob
 import os
 
@@ -9,6 +9,11 @@ setup(name='clinical_EPPs',
         description='',
         author='Maya Brandi',
         author_email='maya.brandi@scilifelab.se',
-        packages=['clinical_EPPs'],
-        scripts=glob.glob("EPPs/*.py")
+        packages=find_packages(),
+        scripts=glob.glob("EPPs/*.py"),
+        include_package_data=True,
+        entry_points={
+        'console_scripts': ['epps=clinical_EPPs.commands:cli'],
+    },
+
      )
