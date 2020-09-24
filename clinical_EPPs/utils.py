@@ -1,4 +1,4 @@
-from genologics.entities import Process, Artifact
+from genologics.entities import Process, Artifact, Sample
 from genologics.config import BASEURI
 from genologics.lims import Lims
 
@@ -10,7 +10,7 @@ import pathlib
 from clinical_EPPs.exceptions import QueueArtifactsError, MissingArtifactError
 
 
-def get_process_samples(process):
+def get_process_samples(process: Process) -> list(Sample):
     """Get all samples in a process"""
 
     all_samples = []
@@ -20,14 +20,14 @@ def get_process_samples(process):
     return set(all_samples)
 
 
-def get_sample_artifact(lims, sample):
+def get_sample_artifact(lims: Lims, sample: Sample) -> Artifact:
     """Returning the initial artifact related to a sample.
     Assuming first artifact is allways named sample.id + 'PA1."""
 
     return Artifact(lims, id=f"{sample.id}PA1")
 
 
-def get_artifacts(process: Process, inputs: bool) -> list:
+def get_artifacts(process: Process, inputs: bool) -> list(Artifact):
     """If inputs is True, returning all input analytes of the process,
     otherwise returning all output analytes of the process"""
 
@@ -38,20 +38,20 @@ def get_artifacts(process: Process, inputs: bool) -> list:
     return artifacts
 
 
-def filter_artifacts(artifacts: list, udf: str, value) -> list:
+def filter_artifacts(artifacts: list(Artifact), udf: str, value) -> list(Artifact):
     """Returning a list of only artifacts with udf==value"""
 
     return [a for a in artifacts if a.udf.get(udf) == value]
 
 
-def unique_list_of_ids(entity_list: list) -> list:
+def unique_list_of_ids(entity_list: list) -> list(str):
     """Arg: entity_list: list of any type of genologics entity.
     Retruning unique list of entity ids."""
 
     return set([e.id for e in entity_list])
 
 
-def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str):
+def queue_artifacts(lims: Lims, artifacts: list(Artifact), workflow_id: str, stage_id: str) -> None:
     """Queue artifacts to stage in workflow."""
 
     if not artifacts:
@@ -72,7 +72,7 @@ def queue_artifacts(lims: Lims, artifacts: list, workflow_id: str, stage_id: str
         raise QueueArtifactsError("Failed to queue artifacts.")
 
 
-def get_latest_artifact(lims: Lims, sample_id: str, process_type: list) -> Artifact:
+def get_latest_artifact(lims: Lims, sample_id: str, process_type: list(str)) -> Artifact:
     """Getting the most recently generated artifact by process_type and sample_id.
 
     Searching for all artifacts (Analytes) associated with <sample_id> that
@@ -95,7 +95,7 @@ def get_latest_artifact(lims: Lims, sample_id: str, process_type: list) -> Artif
     return artifacts[-1]
 
 
-def get_lims_log_file(lims, file_id: "str") -> pathlib.Path:
+def get_lims_log_file(lims: Lims, file_id: str) -> pathlib.Path:
     """Searching for a log Artifact with file_id. 
     
     If the artifact is found, returning the path to the attached file. 

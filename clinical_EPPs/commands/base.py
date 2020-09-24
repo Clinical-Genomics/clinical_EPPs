@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import logging
 
-
-
 # commands
 from clinical_EPPs.EPPs.rerun_samples import rerun_samples
 from clinical_EPPs.EPPs.move_samples import move_samples
