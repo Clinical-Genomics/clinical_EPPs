@@ -69,26 +69,19 @@ def check_same_sample_in_many_rerun_pools(rerun_arts: list):
 
 
 @click.command()
-@options.log()
-@options.process()
 @options.workflow_id("Destination workflow id.")
 @options.stage_id("Destination stage id.")
 @options.process_type(
-    "The name(s) of the process type(s) before the requeue step. Fetching artifact to requeue from here."
-)
+    "The name(s) of the process type(s) before the requeue step. Fetching artifact to requeue from here.")
 @options.udf("UDF that will tell wich artifacts to move.")
-def main(process, workflow_id, stage_id, udf, process_type, log):
+
+@click.pass_context
+def rerun_samples(ctx, workflow_id, stage_id, udf, process_type):
     """Script to requeue samples for sequencing.
     
     """
-
-    lims = Lims(BASEURI, USERNAME, PASSWORD)
-    log_path = pathlib.Path(log)
-    if not log_path.is_file():
-       log_path = get_lims_log_file(lims, log)
-    logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
-    process = Process(lims, id=process)
-
+    process = ctx.obj['process']
+    lims = ctx.obj['lims']
     artifacts = get_artifacts(process, False)
     rerun_arts = filter_artifacts(artifacts, udf, True)
 
@@ -102,5 +95,4 @@ def main(process, workflow_id, stage_id, udf, process_type, log):
             sys.exit(e.message)
 
 
-if __name__ == "__main__":
-    main()
+

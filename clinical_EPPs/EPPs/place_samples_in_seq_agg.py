@@ -64,23 +64,19 @@ def get_pools_and_samples_to_queue(
 
 
 @click.command()
-@options.log()
-@options.process()
 @options.workflow_id("Destination workflow id.")
 @options.stage_id("Destination stage id.")
 @options.process_type(
     "The name(s) of the process type(s) from where we want to fetch the pools"
 )
-def main(process, workflow_id, stage_id, process_type, log):
+
+@click.pass_context
+def place_samples_in_seq_agg(ctx, workflow_id, stage_id, process_type):
     """Queueing artifacts with given udf==True, to stage in workflow.
     Raising error if quiueing fails."""
     
-    lims = Lims(BASEURI, USERNAME, PASSWORD)
-    log_path = pathlib.Path(log)
-    if not log_path.is_file():
-       log_path = get_lims_log_file(lims, log)
-    logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
-    process = Process(lims, id=process)
+    process = ctx.obj['process']
+    lims = ctx.obj['lims']
 
     samples = get_process_samples(process)
 

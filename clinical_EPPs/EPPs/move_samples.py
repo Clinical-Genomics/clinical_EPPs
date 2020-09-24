@@ -14,26 +14,22 @@ import pathlib
 
 
 @click.command()
-@options.log()
-@options.process()
 @options.workflow_id("Destination workflow id.")
 @options.stage_id("Destination stage id.")
 @options.udf("UDF that will tell wich artifacts to move.")
 @options.input_artifacts(
     "Use this flag if you want to queue the input artifacts of the current process. Default is to queue the output artifacts (analytes) of the process."
 )
-def main(process, workflow_id, stage_id, udf, input_artifacts, log):
+
+@click.pass_context
+def move_samples(ctx, workflow_id, stage_id, udf, input_artifacts):
     """Script to move aritfats to another stage.
     
     Queueing artifacts with <udf==True>, to stage with <stage-id>
     in workflow with <workflow-id>. Raising error if quiueing fails."""
 
-    lims = Lims(BASEURI, USERNAME, PASSWORD)
-    log_path = pathlib.Path(log)
-    if not log_path.is_file():
-       log_path = get_lims_log_file(lims, log)
-    logging.basicConfig(filename = str(log_path.absolute()), filemode='a', level=logging.INFO)
-    process = Process(lims, id=process)
+    process = ctx.obj['process']
+    lims = ctx.obj['lims']
 
     artifacts = get_artifacts(process, input_artifacts)
     filtered_artifacts = filter_artifacts(artifacts, udf, True)
