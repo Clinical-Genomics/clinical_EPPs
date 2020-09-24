@@ -1,11 +1,4 @@
 #!/usr/bin/env python
-import logging
-
-# commands
-from clinical_EPPs.EPPs.rerun_samples import rerun_samples
-from clinical_EPPs.EPPs.move_samples import move_samples
-from clinical_EPPs.EPPs.place_samples_in_seq_agg import place_samples_in_seq_agg
-
 from clinical_EPPs.utils import get_lims_log_file
 from clinical_EPPs import options
 
@@ -16,6 +9,13 @@ from genologics.entities import Process
 import pathlib
 import logging
 import click
+
+# commands
+from clinical_EPPs.EPPs.move.rerun_samples import rerun_samples
+from clinical_EPPs.EPPs.move.move_samples import move_samples
+from clinical_EPPs.EPPs.move.place_samples_in_seq_agg import place_samples_in_seq_agg
+
+
 
 @click.group()
 @options.log()
