@@ -104,9 +104,7 @@ def main(lims, args):
     BCL.set_udfs()
 
     d = {"ca": BCL.updated_arts, "wa": BCL.not_updated_arts}
-    abstract = (
-        "Updated {ca} artifact(s). Skipped {wa} due to missing data in the demultiplex database. "
-    ).format(**d)
+    abstract = ("Updated {ca} artifact(s). Skipped {wa} due to missing data in the demultiplex database. ").format(**d)
 
     if BCL.failed_arts:
         abstract = abstract + str(BCL.failed_arts) + " samples failed QC!"
