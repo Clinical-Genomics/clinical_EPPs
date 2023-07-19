@@ -31,9 +31,7 @@ class BCLconv:
         self.reads_treshold = 1000
         all_artifacts = self.process.all_outputs(unique=True)
         self.sequencing_metrics = []
-        self.not_updated_arts = len(
-            filter(lambda a: len(a.samples) == 1, all_artifacts)
-        )
+        self.not_updated_arts = len(filter(lambda a: len(a.samples) == 1, all_artifacts))
         self.failed_arts = 0
         self.cg_api_client = CgApiClient(base_url=CG_URL)
 
@@ -70,7 +68,7 @@ class BCLconv:
             sys.exit(f"Error getting metrics for flowcell: {self.flowcellname}")
 
     def get_qc(self, q30, reads):
-        if q30 >= self.q30treshhold and reads >= self.reads_treshold:
+        if q30 * 100 >= self.q30treshhold and reads >= self.reads_treshold:
             return "PASSED"
         else:
             self.failed_arts += 1
