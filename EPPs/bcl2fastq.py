@@ -3,7 +3,6 @@ from __future__ import division
 
 import sys
 from argparse import ArgumentParser
-from typing import List
 
 from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Process
@@ -11,7 +10,6 @@ from genologics.lims import Lims
 
 from clinical_EPPs.cg_api_client import CgApiClient
 from clinical_EPPs.config import CG_URL
-from clinical_EPPs.models import SequencingMetrics
 
 DESC = """
 """
@@ -59,11 +57,8 @@ class BCLconv:
     def get_sequencing_metrics(self):
         """Geting the demultiplex statistics from the cg api."""
         try:
-            self.sequencing_metrics = (
-                self.cg_api_client.get_sequencing_metrics_for_flow_cell(
-                    self.flowcellname
-                )
-            )
+            self.sequencing_metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flowcellname)
+        
         except:
             sys.exit(f"Error getting metrics for flowcell: {self.flowcellname}")
 
