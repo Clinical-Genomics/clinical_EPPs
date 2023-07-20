@@ -20,22 +20,22 @@ DESC = """
 ##--------------------------------------------------------------------------------
 
 
-class BCLconv:
+class SequencingQualityChecker:
     def __init__(self, process):
         self.process = process
-        self.artifacts = {}
+        self.sample_artifacts = {}
 
-        self.not_updated_artifacts = self.get_number_of_artifacts_with_one_sample()
+        self.not_updated_artifacts = self.count_single_sample_artifacts()
         self.updated_artifacts = 0
         self.failed_artifacts = 0
 
-        self.q30treshhold = process.udf.get("Threshold for % bases >= Q30")
-        self.reads_treshold = 1000
+        self.q30_threshold = process.udf.get("Threshold for % bases >= Q30")
+        self.reads_threshold = 1000
         self.sequencing_metrics = []
 
         self.cg_api_client = CgAPIClient(base_url=CG_URL)
 
-    def get_number_of_artifacts_with_one_sample(self):
+    def count_single_sample_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)
         return len(list(filter(lambda a: len(a.samples) == 1, all_artifacts)))
 
@@ -43,23 +43,22 @@ class BCLconv:
     def get_artifacts(self):
         """Preparing output artifact dict."""
         for input_output in self.process.input_output_maps:
-            input = input_output[0]
-            output = input_output[1]
-            if output["output-generation-type"] == "PerReagentLabel":
-                artifact = output["uri"]
+            input_map = input_output[0]
+            output_map = input_output[1]
+            if output_map["output-generation-type"] == "PerReagentLabel":
+                artifact = output_map["uri"]
                 sample_name = artifact.samples[0].id
-                lane = input["uri"].location[1][0]
-                if not sample_name in self.artifacts:
-                    self.artifacts[sample_name] = {lane: artifact}
+                lane = input_map["uri"].location[1][0]
+                if not sample_name in self.sample_artifacts:
+                    self.sample_artifacts[sample_name] = {lane: artifact}
                 else:
-                    self.artifacts[sample_name][lane] = artifact
+                    self.sample_artifacts[sample_name][lane] = artifact
 
-    def get_fc_id(self):
-        """Get FC id of the sequencing run. Assuming all samples come from one flowcell."""
+    def get_flow_cell_id(self):
         try:
             self.flowcellname = self.process.all_inputs()[0].container.name
         except:
-            sys.exit("Could not get FC id from Container name")
+            sys.exit("Could not get flow cell id from container.")
 
     def get_sequencing_metrics(self):
         """Get sequencing metrics from the cg api."""
@@ -68,9 +67,12 @@ class BCLconv:
         
         except:
             sys.exit(f"Error getting sequencing metrics for flowcell: {self.flowcellname}")
+    
+    def is_valid_quality(self, q30_score : float, reads : int):
+        return q30_score * 100 >= self.q30_threshold and reads >= self.reads_threshold
 
     def get_quality_control_flag(self, q30, reads):
-        if q30 * 100 >= self.q30treshhold and reads >= self.reads_treshold:
+        if self.is_valid_quality(q30, reads):
             return "PASSED"
         else:
             self.failed_artifacts += 1
@@ -82,11 +84,11 @@ class BCLconv:
         for metrics in self.sequencing_metrics:
             sample_lims_id: str = metrics.sample_internal_id
 
-            if sample_lims_id not in self.artifacts:
+            if sample_lims_id not in self.sample_artifacts:
                 continue
 
             lane = str(metrics.flow_cell_lane_number)
-            sample_artifact = self.artifacts[sample_lims_id].get(lane)
+            sample_artifact = self.sample_artifacts[sample_lims_id].get(lane)
 
             sample_artifact.udf["# Reads"] = metrics.sample_total_reads_in_lane
             sample_artifact.udf["% Bases >=Q30"] = metrics.sample_base_fraction_passing_q30
@@ -103,21 +105,22 @@ def main(lims, args):
     process = Process(lims, id=args.pid)
     if not "Threshold for % bases >= Q30" in process.udf:
         sys.exit("Threshold for % bases >= Q30 has not ben set.")
-    BCL = BCLconv(process)
-    BCL.get_fc_id()
-    BCL.get_artifacts()
-    BCL.get_sequencing_metrics()
-    BCL.set_udfs()
 
-    abstract: str = f"Updated {BCL.updated_artifacts} artifacts. Skipped {BCL.not_updated_artifacts} due to missing sequencing metrics. "
+    quality_checker = SequencingQualityChecker(process)
+    quality_checker.get_flow_cell_id()
+    quality_checker.get_artifacts()
+    quality_checker.get_sequencing_metrics()
+    quality_checker.set_udfs()
 
-    if BCL.failed_artifacts:
-        abstract = abstract + str(BCL.failed_artifacts) + " samples failed QC!"
+    quality_summary: str = f"Updated {quality_checker.updated_artifacts} artifacts. Skipped {quality_checker.not_updated_artifacts} due to missing sequencing metrics. "
 
-    if BCL.failed_artifacts or BCL.not_updated_artifacts:
-        sys.exit(abstract)
+    if quality_checker.failed_artifacts:
+        quality_summary = quality_summary + str(quality_checker.failed_artifacts) + " samples failed QC!"
+
+    if quality_checker.failed_artifacts or quality_checker.not_updated_artifacts:
+        sys.exit(quality_summary)
     else:
-        print >> sys.stderr, abstract
+        print(quality_summary, file=sys.stderr)
 
 
 if __name__ == "__main__":
