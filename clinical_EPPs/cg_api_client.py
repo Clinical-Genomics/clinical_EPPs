@@ -18,9 +18,14 @@ class CgAPIClient:
             return json.loads(res.text)
 
     def get_sequencing_metrics_for_flow_cell(
-        self, flow_cell_id: str
+        self, flow_cell_name: str
     ) -> List[SequencingMetrics]:
-        metrics_endpoint: str = f"/flowcells/{flow_cell_id}/sequencing_metrics"
+        """
+        Retrieves sequencing metrics for a flow cell from the CG API.
+        Raises:
+            Exception: If the request to the CG API fails.
+        """
+        metrics_endpoint: str = f"/flowcells/{flow_cell_name}/sequencing_metrics"
         try:
             response = requests.get(self.base_url + metrics_endpoint)
             response.raise_for_status()
@@ -28,4 +33,4 @@ class CgAPIClient:
             return [SequencingMetrics.parse_obj(metric) for metric in metrics_data]
 
         except requests.RequestException as e:
-            raise Exception(f"Failed to get metrics for flowcell {flow_cell_id}, {e}")
+            raise Exception(f"Failed to get metrics for flowcell {flow_cell_name}, {e}")

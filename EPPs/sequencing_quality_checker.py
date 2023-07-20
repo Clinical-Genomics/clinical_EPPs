@@ -62,8 +62,8 @@ class SequencingQualityChecker:
             metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flow_cell_name)
             self.sequencing_metrics = metrics
         
-        except:
-            sys.exit(f"Error getting sequencing metrics for flowcell: {self.flow_cell_name}")
+        except Exception as e:
+            sys.exit(f"Error getting sequencing metrics for flowcell: {self.flow_cell_name}, {e}")
     
     def get_and_set_q30_threshold(self):
         q30_threshold_setting: str = "Threshold for % bases >= Q30"
