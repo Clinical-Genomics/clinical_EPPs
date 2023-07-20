@@ -8,7 +8,7 @@ from genologics.config import BASEURI,USERNAME,PASSWORD
 from genologics.entities import Process
 from genologics.epp import EppLogger
 from clinical_EPPs.config import CG_URL
-from clinical_EPPs.cg_api_client import CgApiClient
+from clinical_EPPs.cg_api_client import CgAPIClient
 import logging
 import sys
 
@@ -25,7 +25,7 @@ class MissingReads():
         self.artifacts = []
         self.passed_arts = []
         self.failed_arts = []
-        self.cgface_obj = CgApiClient(base_url=CG_URL)
+        self.cgface_obj = CgAPIClient(base_url=CG_URL)
 
     def get_artifacts(self):
         all_artifacts = self.process.all_outputs(unique=True)

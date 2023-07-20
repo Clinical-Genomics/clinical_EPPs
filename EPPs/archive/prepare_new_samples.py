@@ -8,7 +8,7 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.entities import Process, Artifact
 
 from clinical_EPPs.config import CG_URL
-from clinical_EPPs.cg_api_client import CgApiClient
+from clinical_EPPs.cg_api_client import CgAPIClient
 
 DESC = """Script to set the Reads Missing (M) udf for all samples befor they go 
 into any workflow. The Reads Missing (M) is at this point defined only by the 
@@ -21,7 +21,7 @@ class SetMissingReads():
         self.input_output_maps = self.process.input_output_maps
         self.samples = []
         self.failed_samples = 0
-        self.cgface_obj = CgApiClient(base_url=CG_URL)
+        self.cgface_obj = CgAPIClient(base_url=CG_URL)
 
 
     def get_samples(self):

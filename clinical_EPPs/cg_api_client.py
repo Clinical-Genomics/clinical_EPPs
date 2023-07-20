@@ -5,7 +5,7 @@ import requests
 from clinical_EPPs.models import SequencingMetrics
 
 
-class CgApiClient:
+class CgAPIClient:
     def __init__(self, base_url):
         self.base_url = base_url
 

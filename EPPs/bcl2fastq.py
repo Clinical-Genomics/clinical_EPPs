@@ -8,7 +8,7 @@ from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Process
 from genologics.lims import Lims
 
-from clinical_EPPs.cg_api_client import CgApiClient
+from clinical_EPPs.cg_api_client import CgAPIClient
 from clinical_EPPs.config import CG_URL
 
 DESC = """
@@ -24,49 +24,56 @@ class BCLconv:
     def __init__(self, process):
         self.process = process
         self.artifacts = {}
-        self.updated_arts = 0
+
+        self.not_updated_artifacts = self.get_number_of_artifacts_with_one_sample()
+        self.updated_artifacts = 0
+        self.failed_artifacts = 0
+
         self.q30treshhold = process.udf.get("Threshold for % bases >= Q30")
         self.reads_treshold = 1000
-        all_artifacts = self.process.all_outputs(unique=True)
         self.sequencing_metrics = []
-        self.not_updated_arts = len(filter(lambda a: len(a.samples) == 1, all_artifacts))
-        self.failed_arts = 0
-        self.cg_api_client = CgApiClient(base_url=CG_URL)
+
+        self.cg_api_client = CgAPIClient(base_url=CG_URL)
+
+    def get_number_of_artifacts_with_one_sample(self):
+        all_artifacts = self.process.all_outputs(unique=True)
+        return len(list(filter(lambda a: len(a.samples) == 1, all_artifacts)))
+
 
     def get_artifacts(self):
-        """Prepparing output artifact dict."""
+        """Preparing output artifact dict."""
         for input_output in self.process.input_output_maps:
-            inpt = input_output[0]
-            outpt = input_output[1]
-            if outpt["output-generation-type"] == "PerReagentLabel":
-                art = outpt["uri"]
-                sampname = art.samples[0].id
-                well = inpt["uri"].location[1][0]
-                if not sampname in self.artifacts:
-                    self.artifacts[sampname] = {well: art}
+            input = input_output[0]
+            output = input_output[1]
+            if output["output-generation-type"] == "PerReagentLabel":
+                artifact = output["uri"]
+                sample_name = artifact.samples[0].id
+                lane = input["uri"].location[1][0]
+                if not sample_name in self.artifacts:
+                    self.artifacts[sample_name] = {lane: artifact}
                 else:
-                    self.artifacts[sampname][well] = art
+                    self.artifacts[sample_name][lane] = artifact
 
     def get_fc_id(self):
-        """Gettning FC id of the seq-run. Assuming only all samples come from only one flowcell"""
+        """Get FC id of the sequencing run. Assuming all samples come from one flowcell."""
         try:
             self.flowcellname = self.process.all_inputs()[0].container.name
         except:
             sys.exit("Could not get FC id from Container name")
 
     def get_sequencing_metrics(self):
-        """Geting the demultiplex statistics from the cg api."""
+        """Get sequencing metrics from the cg api."""
         try:
             self.sequencing_metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flowcellname)
         
         except:
-            sys.exit(f"Error getting metrics for flowcell: {self.flowcellname}")
+            sys.exit(f"Error getting sequencing metrics for flowcell: {self.flowcellname}")
 
-    def get_qc(self, q30, reads):
+    def get_quality_control_flag(self, q30, reads):
         if q30 * 100 >= self.q30treshhold and reads >= self.reads_treshold:
             return "PASSED"
         else:
-            self.failed_arts += 1
+            self.failed_artifacts += 1
             return "FAILED"
 
     def set_udfs(self):
@@ -78,19 +85,18 @@ class BCLconv:
             if sample_lims_id not in self.artifacts:
                 continue
 
-            lane: int = metrics.flow_cell_lane_number
-            sample_artifact = self.artifacts[sample_lims_id].get(str(lane))
+            lane = str(metrics.flow_cell_lane_number)
+            sample_artifact = self.artifacts[sample_lims_id].get(lane)
 
-            sample_artifact.udf["% Perfect Index Read"] = float(metrics.sample_base_fraction_passing_q30)
             sample_artifact.udf["# Reads"] = metrics.sample_total_reads_in_lane
-            sample_artifact.udf["% Bases >=Q30"] = float(metrics.sample_base_fraction_passing_q30)
+            sample_artifact.udf["% Bases >=Q30"] = metrics.sample_base_fraction_passing_q30
 
-            qc_flag = self.get_qc(float(metrics.sample_base_fraction_passing_q30), metrics.sample_total_reads_in_lane)
+            qc_flag = self.get_quality_control_flag(metrics.sample_base_fraction_passing_q30, metrics.sample_total_reads_in_lane)
             sample_artifact.qc_flag = qc_flag
     
             sample_artifact.put()
-            self.updated_arts += 1
-            self.not_updated_arts -= 1
+            self.updated_artifacts += 1
+            self.not_updated_artifacts -= 1
 
 
 def main(lims, args):
@@ -103,13 +109,12 @@ def main(lims, args):
     BCL.get_sequencing_metrics()
     BCL.set_udfs()
 
-    d = {"ca": BCL.updated_arts, "wa": BCL.not_updated_arts}
-    abstract = ("Updated {ca} artifact(s). Skipped {wa} due to missing data in the demultiplex database. ").format(**d)
+    abstract: str = f"Updated {BCL.updated_artifacts} artifacts. Skipped {BCL.not_updated_artifacts} due to missing sequencing metrics. "
 
-    if BCL.failed_arts:
-        abstract = abstract + str(BCL.failed_arts) + " samples failed QC!"
+    if BCL.failed_artifacts:
+        abstract = abstract + str(BCL.failed_artifacts) + " samples failed QC!"
 
-    if BCL.failed_arts or BCL.not_updated_arts:
+    if BCL.failed_artifacts or BCL.not_updated_artifacts:
         sys.exit(abstract)
     else:
         print >> sys.stderr, abstract
