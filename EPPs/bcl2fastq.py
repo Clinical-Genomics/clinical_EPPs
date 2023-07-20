@@ -99,6 +99,14 @@ class SequencingQualityChecker:
             sample_artifact.put()
             self.updated_artifacts += 1
             self.not_updated_artifacts -= 1
+    
+    def get_quality_summary(self) -> str:
+        quality_summary: str = f"Updated {self.updated_artifacts} artifacts. Skipped {self.not_updated_artifacts} due to missing sequencing metrics."
+
+        if self.failed_artifacts:
+            quality_summary = quality_summary + str(self.failed_artifacts) + " samples failed QC!"
+        
+        return quality_summary
 
 
 def main(lims, args):
@@ -112,10 +120,7 @@ def main(lims, args):
     quality_checker.get_sequencing_metrics()
     quality_checker.set_udfs()
 
-    quality_summary: str = f"Updated {quality_checker.updated_artifacts} artifacts. Skipped {quality_checker.not_updated_artifacts} due to missing sequencing metrics. "
-
-    if quality_checker.failed_artifacts:
-        quality_summary = quality_summary + str(quality_checker.failed_artifacts) + " samples failed QC!"
+    quality_summary: str = quality_checker.get_quality_summary()
 
     if quality_checker.failed_artifacts or quality_checker.not_updated_artifacts:
         sys.exit(quality_summary)
