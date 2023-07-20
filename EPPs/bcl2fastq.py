@@ -11,8 +11,7 @@ from genologics.lims import Lims
 from clinical_EPPs.cg_api_client import CgAPIClient
 from clinical_EPPs.config import CG_URL
 
-DESC = """
-"""
+DESC = """Script for validating the sequencing quality for the samples on a flow cell."""
 
 
 ##--------------------------------------------------------------------------------
@@ -78,9 +77,7 @@ class SequencingQualityChecker:
             self.failed_artifacts += 1
             return "FAILED"
 
-    def set_udfs(self):
-        """Setting the demultiplex udfs"""
-
+    def quality_control_samples(self):
         for metrics in self.sequencing_metrics:
             sample_lims_id: str = metrics.sample_internal_id
 
@@ -89,6 +86,9 @@ class SequencingQualityChecker:
 
             lane = str(metrics.flow_cell_lane_number)
             sample_artifact = self.sample_artifacts[sample_lims_id].get(lane)
+
+            if not sample_artifact:
+                continue
 
             sample_artifact.udf["# Reads"] = metrics.sample_total_reads_in_lane
             sample_artifact.udf["% Bases >=Q30"] = metrics.sample_base_fraction_passing_q30
@@ -108,6 +108,12 @@ class SequencingQualityChecker:
         
         return quality_summary
 
+    def validate_flow_cell_sequencing_quality(self):
+        self.get_flow_cell_id()
+        self.get_artifacts()
+        self.get_sequencing_metrics()
+        self.quality_control_samples()
+
 
 def main(lims, args):
     process = Process(lims, id=args.pid)
@@ -115,11 +121,7 @@ def main(lims, args):
         sys.exit("Threshold for % bases >= Q30 has not ben set.")
 
     quality_checker = SequencingQualityChecker(process)
-    quality_checker.get_flow_cell_id()
-    quality_checker.get_artifacts()
-    quality_checker.get_sequencing_metrics()
-    quality_checker.set_udfs()
-
+    quality_checker.validate_flow_cell_sequencing_quality()
     quality_summary: str = quality_checker.get_quality_summary()
 
     if quality_checker.failed_artifacts or quality_checker.not_updated_artifacts:
