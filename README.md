@@ -47,12 +47,12 @@ the branch that has been installed is now avalibe from within the [lims web inte
 
 The branch with the new script has been installed and you want to test the script through the web interface. (Or deploy it to production. The procedure is the same.)
 
-Let us call the new script we want to test: `bcl2fastq.py`. Running it from the command line looks like this:
+Let us call the new script we want to test: `sequencing_quality_checker.py`. Running it from the command line looks like this:
 
 ```
-(epp_master)glsai@clinical-lims-stage:~/opt/clinical_EPPs/EPPs$ python bcl2fastq.py --help
+(epp_master)glsai@clinical-lims-stage:~/opt/clinical_EPPs/EPPs$ python sequencing_quality_checker.py --help
 
-usage: bcl2fastq.py [-h] [-p PID] [-l LOG]
+usage: sequencing_quality_checker.py [-h] [-p PID] [-l LOG]
 
 optional arguments:
   -h, --help  show this help message and exit
@@ -68,7 +68,7 @@ To make the new script avalible in the [web interface](https://clinical-lims-sta
 - Choose a Automation Name
 - Channel Name should always be `limsserver`.
 - Enter the command line string. If you need help selecting a token for an argument, klick the `TOKENS` tab wich will show the list of avalible tokens. In this case the string is
-`bash -c "/home/glsai/miniconda2/envs/epp_master/bin/bcl2fastq.py -p {processLuid} -l {compoundOutputFileLuid0}"`
+`bash -c "/home/glsai/miniconda2/envs/epp_master/bin/sequencing_quality_checker.py -p {processLuid} -l {compoundOutputFileLuid0}"`
 - Under `AUTOMATION USE`, select master step(s) in which the new EPP should be available.
 - Save
 
@@ -117,7 +117,7 @@ PASSWORD=
 
 **~/.clinical_eppsrc**
 
-This config file contains userinfo to give access to cgstats which contains information about demultiplexing data. The config is used by one of the scripts in the Clinical-Genomics/clinical_EPPs package; bcl2fastq.py
+This config file contains userinfo to give access to cgstats which contains information about demultiplexing data. The config is used by one of the scripts in the Clinical-Genomics/clinical_EPPs package; sequencing_quality_checker.py
 
 Its content must look like this:
 
