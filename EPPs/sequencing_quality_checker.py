@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division
 
 import sys
 from argparse import ArgumentParser
@@ -31,16 +30,10 @@ class SequencingQualityChecker:
         self.updated_artifacts_count = 0
         self.failed_artifacts_count = 0
 
-        self.q30_threshold = process.udf.get("Threshold for % bases >= Q30")
-
         self.cg_api_client = CgAPIClient(base_url=CG_URL)
 
-    def count_single_sample_artifacts(self):
-        all_artifacts = self.process.all_outputs(unique=True)
-        return len(list(filter(lambda a: len(a.samples) == 1, all_artifacts)))
 
-
-    def set_sample_artifacts(self):
+    def get_and_set_sample_artifacts(self):
         """Preparing output artifact dict."""
         for input_output in self.process.input_output_maps:
             input_map = input_output[0]
@@ -66,20 +59,33 @@ class SequencingQualityChecker:
 
     def get_and_set_sequencing_metrics(self):
         try:
-            self.sequencing_metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flow_cell_name)
+            metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flow_cell_name)
+            self.sequencing_metrics = metrics
         
         except:
             sys.exit(f"Error getting sequencing metrics for flowcell: {self.flow_cell_name}")
     
+    def get_and_set_q30_threshold(self):
+        q30_threshold_setting: str = "Threshold for % bases >= Q30"
+
+        if not q30_threshold_setting in self.process.udf:
+            sys.exit(f"{q30_threshold_setting} has not ben set.")
+        
+        self.q30_threshold = self.process.udf.get("Threshold for % bases >= Q30")
+
+    def count_single_sample_artifacts(self):
+        all_artifacts = self.process.all_outputs(unique=True)
+        return len(list(filter(lambda a: len(a.samples) == 1, all_artifacts)))
+
     def is_valid_quality(self, q30_score : float, reads : int):
         return q30_score * 100 >= self.q30_threshold and reads >= SequencingQualityChecker.READS_MIN_THRESHOLD
 
     def get_quality_control_flag(self, q30, reads):
         if self.is_valid_quality(q30, reads):
             return "PASSED"
-        else:
-            self.failed_artifacts_count += 1
-            return "FAILED"
+
+        self.failed_artifacts_count += 1
+        return "FAILED"
 
     def quality_control_samples(self):
         for metrics in self.sequencing_metrics:
@@ -103,26 +109,25 @@ class SequencingQualityChecker:
             sample_artifact.put()
             self.updated_artifacts_count += 1
             self.not_updated_artifacts -= 1
-    
+
     def get_quality_summary(self) -> str:
         quality_summary: str = f"Checked {self.updated_artifacts_count} samples. Skipped {self.not_updated_artifacts} samples."
 
         if self.failed_artifacts_count:
-            quality_summary = quality_summary + str(self.failed_artifacts_count) + " samples failed QC!"
+            quality_summary = f"{quality_summary} {self.failed_artifacts_count} samples failed QC!"
         
         return quality_summary
 
     def validate_flow_cell_sequencing_quality(self):
+        self.get_and_set_q30_threshold()
         self.get_and_set_flow_cell_name()
-        self.set_sample_artifacts()
+        self.get_and_set_sample_artifacts()
         self.get_and_set_sequencing_metrics()
         self.quality_control_samples()
 
 
 def main(lims, args):
     process = Process(lims, id=args.pid)
-    if not "Threshold for % bases >= Q30" in process.udf:
-        sys.exit("Threshold for % bases >= Q30 has not ben set.")
 
     quality_checker = SequencingQualityChecker(process)
     quality_checker.validate_flow_cell_sequencing_quality()
