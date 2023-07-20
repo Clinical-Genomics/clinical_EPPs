@@ -20,17 +20,18 @@ DESC = """Script for validating the sequencing quality for the samples on a flow
 
 
 class SequencingQualityChecker:
+    READS_MIN_THRESHOLD = 1000
+
     def __init__(self, process):
         self.process = process
         self.sample_artifacts = {}
+        self.sequencing_metrics = []
 
         self.not_updated_artifacts = self.count_single_sample_artifacts()
-        self.updated_artifacts = 0
-        self.failed_artifacts = 0
+        self.updated_artifacts_count = 0
+        self.failed_artifacts_count = 0
 
         self.q30_threshold = process.udf.get("Threshold for % bases >= Q30")
-        self.reads_threshold = 1000
-        self.sequencing_metrics = []
 
         self.cg_api_client = CgAPIClient(base_url=CG_URL)
 
@@ -39,7 +40,7 @@ class SequencingQualityChecker:
         return len(list(filter(lambda a: len(a.samples) == 1, all_artifacts)))
 
 
-    def get_artifacts(self):
+    def set_sample_artifacts(self):
         """Preparing output artifact dict."""
         for input_output in self.process.input_output_maps:
             input_map = input_output[0]
@@ -48,33 +49,36 @@ class SequencingQualityChecker:
                 artifact = output_map["uri"]
                 sample_name = artifact.samples[0].id
                 lane = input_map["uri"].location[1][0]
-                if not sample_name in self.sample_artifacts:
+                if sample_name not in self.sample_artifacts:
                     self.sample_artifacts[sample_name] = {lane: artifact}
                 else:
                     self.sample_artifacts[sample_name][lane] = artifact
 
-    def get_flow_cell_id(self):
+    def get_and_set_flow_cell_name(self):
+        """
+        Raises:
+            Exception: If the flow cell name cannot be found.
+        """
         try:
-            self.flowcellname = self.process.all_inputs()[0].container.name
-        except:
-            sys.exit("Could not get flow cell id from container.")
+            self.flow_cell_name = self.process.all_inputs()[0].container.name
+        except Exception as e:
+            raise Exception("Could not find flow cell name.") from e
 
-    def get_sequencing_metrics(self):
-        """Get sequencing metrics from the cg api."""
+    def get_and_set_sequencing_metrics(self):
         try:
-            self.sequencing_metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flowcellname)
+            self.sequencing_metrics = self.cg_api_client.get_sequencing_metrics_for_flow_cell(self.flow_cell_name)
         
         except:
-            sys.exit(f"Error getting sequencing metrics for flowcell: {self.flowcellname}")
+            sys.exit(f"Error getting sequencing metrics for flowcell: {self.flow_cell_name}")
     
     def is_valid_quality(self, q30_score : float, reads : int):
-        return q30_score * 100 >= self.q30_threshold and reads >= self.reads_threshold
+        return q30_score * 100 >= self.q30_threshold and reads >= SequencingQualityChecker.READS_MIN_THRESHOLD
 
     def get_quality_control_flag(self, q30, reads):
         if self.is_valid_quality(q30, reads):
             return "PASSED"
         else:
-            self.failed_artifacts += 1
+            self.failed_artifacts_count += 1
             return "FAILED"
 
     def quality_control_samples(self):
@@ -97,21 +101,21 @@ class SequencingQualityChecker:
             sample_artifact.qc_flag = qc_flag
     
             sample_artifact.put()
-            self.updated_artifacts += 1
+            self.updated_artifacts_count += 1
             self.not_updated_artifacts -= 1
     
     def get_quality_summary(self) -> str:
-        quality_summary: str = f"Updated {self.updated_artifacts} artifacts. Skipped {self.not_updated_artifacts} due to missing sequencing metrics."
+        quality_summary: str = f"Checked {self.updated_artifacts_count} samples. Skipped {self.not_updated_artifacts} samples."
 
-        if self.failed_artifacts:
-            quality_summary = quality_summary + str(self.failed_artifacts) + " samples failed QC!"
+        if self.failed_artifacts_count:
+            quality_summary = quality_summary + str(self.failed_artifacts_count) + " samples failed QC!"
         
         return quality_summary
 
     def validate_flow_cell_sequencing_quality(self):
-        self.get_flow_cell_id()
-        self.get_artifacts()
-        self.get_sequencing_metrics()
+        self.get_and_set_flow_cell_name()
+        self.set_sample_artifacts()
+        self.get_and_set_sequencing_metrics()
         self.quality_control_samples()
 
 
@@ -124,7 +128,7 @@ def main(lims, args):
     quality_checker.validate_flow_cell_sequencing_quality()
     quality_summary: str = quality_checker.get_quality_summary()
 
-    if quality_checker.failed_artifacts or quality_checker.not_updated_artifacts:
+    if quality_checker.failed_artifacts_count or quality_checker.not_updated_artifacts:
         sys.exit(quality_summary)
     else:
         print(quality_summary, file=sys.stderr)
