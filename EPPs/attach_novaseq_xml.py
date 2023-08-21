@@ -30,14 +30,14 @@ def main(lims, args):
         if outart.type == 'ResultFile' and outart.name == 'Run Info':
             try:
                 lims.upload_new_file(outart, max(
-                    glob.glob('/home/gls/hiseq_data/novaseq-clinical-preproc/*{}/RunInfo.xml'.format(FCID)),
+                    glob.glob('/home/gls/hiseq_data/flow_cell_preproc/*{}/RunInfo.xml'.format(FCID)),
                     key=os.path.getctime))
             except:
                 raise (RuntimeError("No RunInfo.xml Found!"))
         elif outart.type == 'ResultFile' and outart.name == 'Run Parameters':
             try:
                 lims.upload_new_file(outart, max(
-                    glob.glob('/home/gls/hiseq_data/novaseq-clinical-preproc/*{}/RunParameters.xml'.format(FCID)),
+                    glob.glob('/home/gls/hiseq_data/flow_cell_preproc/*{}/RunParameters.xml'.format(FCID)),
                     key=os.path.getctime))
             except:
                 raise (RuntimeError("No RunParameters.xml Found!"))
